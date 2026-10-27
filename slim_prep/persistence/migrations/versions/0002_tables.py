@@ -18,7 +18,13 @@ branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
 # Frozen here, not read from the models: this migration must keep meaning what it meant.
-TABLES = ("prep_rules", "stocks", "standards", "prep_batches", "batch_standards")
+TABLES = (
+    "prep_book_rules",
+    "prep_book_stocks",
+    "prep_book_standards",
+    "prep_book_batches",
+    "prep_book_batch_standards",
+)
 
 
 def _created() -> list[sa.Column]:
@@ -32,7 +38,7 @@ def _created() -> list[sa.Column]:
 
 def upgrade() -> None:
     op.create_table(
-        "prep_rules",
+        "prep_book_rules",
         sa.Column("id", sa.Integer(), nullable=False),
         sa.Column("name", sa.String(100), nullable=False),
         sa.Column("content_hash", sa.String(64), nullable=False),
@@ -40,22 +46,22 @@ def upgrade() -> None:
         sa.Column("published_by_id", sa.String(100), nullable=False),
         sa.Column("published_by", sa.JSON(), nullable=False),
         sa.Column("created_at", types.UtcDateTime(), nullable=False, server_default=types.db_now()),
-        sa.PrimaryKeyConstraint("id", name=op.f("pk_prep_rules")),
-        sa.UniqueConstraint("content_hash", name=op.f("uq_prep_rules_content_hash")),
+        sa.PrimaryKeyConstraint("id", name=op.f("pk_prep_book_rules")),
+        sa.UniqueConstraint("content_hash", name=op.f("uq_prep_book_rules_content_hash")),
     )
     op.create_table(
-        "stocks",
+        "prep_book_stocks",
         sa.Column("id", sa.Integer(), nullable=False),
         sa.Column("name", sa.String(100), nullable=False),
         sa.Column("lot", sa.String(50), nullable=False),
         sa.Column("version", sa.Integer(), nullable=False),
         sa.Column("body", sa.JSON(), nullable=False),
         *_created(),
-        sa.PrimaryKeyConstraint("id", name=op.f("pk_stocks")),
-        sa.UniqueConstraint("name", "lot", "version", name=op.f("uq_stocks_name")),
+        sa.PrimaryKeyConstraint("id", name=op.f("pk_prep_book_stocks")),
+        sa.UniqueConstraint("name", "lot", "version", name=op.f("uq_prep_book_stocks_name")),
     )
     op.create_table(
-        "standards",
+        "prep_book_standards",
         sa.Column("id", sa.Integer(), nullable=False),
         sa.Column("name", sa.String(100), nullable=False),
         sa.Column("prepared", sa.Date(), nullable=False),
@@ -67,13 +73,13 @@ def upgrade() -> None:
         sa.Column("body", sa.JSON(), nullable=False),
         *_created(),
         sa.ForeignKeyConstraint(
-            ["rules_id"], ["prep_rules.id"], name=op.f("fk_standards_rules_id_prep_rules")
+            ["rules_id"], ["prep_book_rules.id"], name=op.f("fk_prep_book_standards_rules_id_prep_book_rules")
         ),
-        sa.PrimaryKeyConstraint("id", name=op.f("pk_standards")),
-        sa.UniqueConstraint("name", "prepared", "version", name=op.f("uq_standards_name")),
+        sa.PrimaryKeyConstraint("id", name=op.f("pk_prep_book_standards")),
+        sa.UniqueConstraint("name", "prepared", "version", name=op.f("uq_prep_book_standards_name")),
     )
     op.create_table(
-        "prep_batches",
+        "prep_book_batches",
         sa.Column("id", sa.Integer(), nullable=False),
         sa.Column("code", sa.String(50), nullable=False),
         sa.Column("version", sa.Integer(), nullable=False),
@@ -81,21 +87,23 @@ def upgrade() -> None:
         sa.Column("body", sa.JSON(), nullable=False),
         *_created(),
         sa.ForeignKeyConstraint(
-            ["rules_id"], ["prep_rules.id"], name=op.f("fk_prep_batches_rules_id_prep_rules")
+            ["rules_id"], ["prep_book_rules.id"], name=op.f("fk_prep_book_batches_rules_id_prep_book_rules")
         ),
-        sa.PrimaryKeyConstraint("id", name=op.f("pk_prep_batches")),
-        sa.UniqueConstraint("code", "version", name=op.f("uq_prep_batches_code")),
+        sa.PrimaryKeyConstraint("id", name=op.f("pk_prep_book_batches")),
+        sa.UniqueConstraint("code", "version", name=op.f("uq_prep_book_batches_code")),
     )
     op.create_table(
-        "batch_standards",
+        "prep_book_batch_standards",
         sa.Column("batch_row_id", sa.Integer(), nullable=False),
         sa.Column("standard_name", sa.String(100), nullable=False),
         sa.Column("standard_prepared", sa.Date(), nullable=False),
         sa.ForeignKeyConstraint(
-            ["batch_row_id"], ["prep_batches.id"], name=op.f("fk_batch_standards_batch_row_id_prep_batches")
+            ["batch_row_id"],
+            ["prep_book_batches.id"],
+            name=op.f("fk_prep_book_batch_standards_batch_row_id_prep_book_batches"),
         ),
         sa.PrimaryKeyConstraint(
-            "batch_row_id", "standard_name", "standard_prepared", name=op.f("pk_batch_standards")
+            "batch_row_id", "standard_name", "standard_prepared", name=op.f("pk_prep_book_batch_standards")
         ),
     )
     append_only.install(op.get_bind(), TABLES)

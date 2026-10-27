@@ -33,3 +33,13 @@ decisions (D-xx) live in slim-data-oss `docs/DECISIONS.md`; D-86 created this mo
     through a port so slim-quality can own them later; no module writes another's tables.
     Rejected: rules inside slim-quality now (it doesn't exist; prep would wait on it); rules typed per
     standard (no defaults, no control).
+
+- **P-18 Handing a batch to slim-data** (Jamie, 2026-10-27; slim-data D-95). `send_to_results`
+  registers the batch's current version in slim-data: samples, prep method, spike amounts in the
+  analysis's unit (only the elements it measures), and each cup's dilution: sample cups → CUP 1, 2…,
+  spike cups → SPIKE 1…, in cup-number order. One spike amount per sample and element. Sent once,
+  recorded in `prep_book_sent_batches`; a correction after sending is the next slice (D-95 point 4).
+  slim-prep depends on slim-data (never the reverse).
+- **P-19 Table names start `prep_book_`** (2026-10-27, found building P-18). The database is shared and
+  slim-data already has `prep_batches`; migrations 0002–0003 were renamed in place (never released).
+  `tests/test_migrations.py` fails on any clash with slim-data's tables.

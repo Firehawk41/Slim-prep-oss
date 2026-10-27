@@ -12,6 +12,9 @@ dependencies = [
     "pydantic>=2.6,<3.0",
     "sqlalchemy>=2.0,<3.0",
     "alembic>=1.13",
+    # The results module a ready batch is handed to (P-11). Not on PyPI; co-developing:
+    # pip install -e ../slim-data-oss. On D-95's branch until it is merged, then @main.
+    "slim-data @ git+https://github.com/Firehawk41/slim-data-oss@claude/intelligent-planck-fhq1bc",
 ]
 
 [project.optional-dependencies]

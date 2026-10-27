@@ -90,7 +90,9 @@ def test_a_race_on_the_same_version_is_a_concurrent_change(session, monkeypatch)
         books.save_stock(session, stock(), ANALYST)
 
 
-@pytest.mark.parametrize("statement", ["UPDATE stocks SET lot = 'x'", "DELETE FROM stocks"])
+@pytest.mark.parametrize(
+    "statement", ["UPDATE prep_book_stocks SET lot = 'x'", "DELETE FROM prep_book_stocks"]
+)
 def test_the_database_refuses_updates_and_deletes(session, statement):
     books.save_stock(session, stock(), ANALYST)
     session.flush()

@@ -30,7 +30,7 @@ screens. **OSS sandbox only:** demo data, never a real lab's databases (`persist
 | P2 | Skeleton: packaging, OSS guard, Alembic (own version table), architecture test, CI | ✅ (P-01) |
 | P3 | Domain: rules (methods, recipes, shelf life), standards book, batch / cups / weighings, figures | ✅ (run list: P5) |
 | P4 | Persistence: append-only tables, `as_of`, audit; service `record_standard` / `record_batch` | ✅ |
-| P5 | Handoff to slim-data (`PrepBatch`, dilution per cup, run order) | |
+| P5 | Handoff to slim-data (`PrepBatch`, dilution per cup, run order) | ◐ `send_to_results` ✅ (P-18, D-95); next: corrections after sending, run order |
 | P6 | Host screens in slim-lims-oss | |
 | P7 | Demo scenarios, `verify`, README, walkthrough | |
 
@@ -46,7 +46,8 @@ slim_prep/
 ├── persistence/   # oss_guard, db (make_engine = the only create_engine), migrate, migrations/, tables,
 │                  #   types, append_only, audit; rules (publish_rules, current_rules), books (stocks,
 │                  #   standards, batches: versioned, as_of, made_from, batches_using)
-└── service/       # books: record_standard (from the book), record_batch (checks, figures, records)
+└── service/       # books: record_standard (from the book), record_batch (checks, figures, records);
+                   #   handoff: results_batch, send_to_results (registers in slim-data), sent_version
 tests/             # factories (demo rules, chain, batch); domain/; conftest (SQLite per test, or TEST_DATABASE_URL); architecture, OSS guard, migrations
 .github/workflows/ci.yml  # ruff + {SQLite, Postgres 16} × {3.11, 3.12} + 95% branch coverage on domain
 ```
@@ -59,6 +60,8 @@ Run: `pip install -e ".[dev]" && pytest`; `ruff check . && ruff format --check .
 - Values are Decimals, never floats; compare unrounded, round once at the end (as slim-data).
 - Prep layouts, limits and equipment lists are lab **data**, never `if demo:` branches. Demo values are
   invented, never a real lab's.
+- Table names start `prep_book_` (P-19): the database is shared with slim-data.
+- slim-prep depends on slim-data (git, on D-95's branch until merged, then `@main`); never the reverse.
 - Portable schema (SQLite + Postgres): enums as ints, JSON via SQLAlchemy `JSON`, no ARRAY, no FKs into
   other modules' tables. Repositories flush; the caller commits.
 - Every push: ruff, full tests, coverage gate.

@@ -12,6 +12,7 @@ from pydantic import Field
 from slim_prep.domain.base import Dec, Frozen
 
 Unit = Literal["ppm", "ppb", "ppt"]
+UNITS: tuple[str, ...] = ("ppm", "ppb", "ppt")
 _IN_PPT: dict[str, Decimal] = {"ppm": Decimal(10) ** 6, "ppb": Decimal(10) ** 3, "ppt": Decimal(1)}
 _LARGEST_FIRST: tuple[Unit, ...] = ("ppm", "ppb", "ppt")
 

@@ -10,7 +10,7 @@ from slim_prep.persistence import (
 )
 from slim_prep.persistence.db import Base
 
-HEAD = "0002"
+HEAD = "0003"
 
 
 def _version(connection) -> str | None:
@@ -66,3 +66,11 @@ def test_models_match_migrations(engine):
             assert compare_metadata(context, Base.metadata) == []
         finally:
             migrate.downgrade(connection)
+
+
+def test_no_table_name_clashes_with_slim_data():
+    """One shared database: slim-prep's tables must not take a name slim-data uses (prep_batches did)."""
+    from slim_data.persistence import tables as results_tables
+
+    assert set(Base.metadata.tables) & set(results_tables.metadata.tables) == set()
+    assert all(name.startswith("prep_book_") for name in Base.metadata.tables)

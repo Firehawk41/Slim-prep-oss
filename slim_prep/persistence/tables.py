@@ -7,6 +7,8 @@ The domain object is stored whole as JSON (Decimals as strings, never floats); t
 are what queries need: the key, the version, and for traceability which standards each batch used
 and what each standard was made from.
 
+Every name starts `prep_book_`: the database is shared, and slim-data already has `prep_batches`.
+
 Portable: enums as ints, JSON via `JSON`, no ARRAY, no foreign keys into other modules' tables.
 """
 
@@ -39,7 +41,7 @@ def _created() -> list[Column]:
 
 
 prep_rules = Table(
-    "prep_rules",
+    "prep_book_rules",
     metadata,
     Column("id", Integer, primary_key=True),
     Column("name", String(100), nullable=False),
@@ -51,7 +53,7 @@ prep_rules = Table(
 )
 
 stocks = Table(
-    "stocks",
+    "prep_book_stocks",
     metadata,
     Column("id", Integer, primary_key=True),
     Column("name", String(100), nullable=False),
@@ -65,13 +67,13 @@ stocks = Table(
 SOURCE_STOCK, SOURCE_STANDARD = 1, 2
 
 standards = Table(
-    "standards",
+    "prep_book_standards",
     metadata,
     Column("id", Integer, primary_key=True),
     Column("name", String(100), nullable=False),
     Column("prepared", Date, nullable=False),
     Column("version", Integer, nullable=False),
-    Column("rules_id", Integer, ForeignKey("prep_rules.id"), nullable=False),
+    Column("rules_id", Integer, ForeignKey("prep_book_rules.id"), nullable=False),
     Column("source_kind", Integer, nullable=False),  # SOURCE_STOCK or SOURCE_STANDARD
     Column("source_name", String(100), nullable=False),
     Column("source_key", String(50), nullable=False),  # the stock's lot, or the standard's prep date
@@ -81,22 +83,33 @@ standards = Table(
 )
 
 prep_batches = Table(
-    "prep_batches",
+    "prep_book_batches",
     metadata,
     Column("id", Integer, primary_key=True),
     Column("code", String(50), nullable=False),
     Column("version", Integer, nullable=False),
-    Column("rules_id", Integer, ForeignKey("prep_rules.id"), nullable=False),
+    Column("rules_id", Integer, ForeignKey("prep_book_rules.id"), nullable=False),
     Column("body", JSON, nullable=False),
     *_created(),
     UniqueConstraint("code", "version"),
 )
 
 batch_standards = Table(
-    "batch_standards",
+    "prep_book_batch_standards",
     metadata,
-    Column("batch_row_id", Integer, ForeignKey("prep_batches.id"), nullable=False),
+    Column("batch_row_id", Integer, ForeignKey("prep_book_batches.id"), nullable=False),
     Column("standard_name", String(100), nullable=False),
     Column("standard_prepared", Date, nullable=False),
     PrimaryKeyConstraint("batch_row_id", "standard_name", "standard_prepared"),
+)
+
+sent_batches = Table(
+    "prep_book_sent_batches",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column("code", String(50), nullable=False, unique=True),  # sent once (P-11); corrections: a later slice
+    Column("version", Integer, nullable=False),  # the batch version slim-data received
+    Column("created_by_id", String(100), nullable=False),
+    Column("created_by", JSON, nullable=False),
+    Column("created_at", UtcDateTime(), nullable=False, server_default=db_now()),
 )
