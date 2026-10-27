@@ -89,12 +89,25 @@ class PrepMethod(Frozen):
     pour_out_step: bool = False
     sample_cups: int = Field(default=2, ge=1)
     spike_cups: int = Field(default=1, ge=0)
+    spikes_at_block_end: bool = True  # run list (P-13): spikes together before the check standard
 
     @model_validator(mode="after")
     def _cap_needs_a_tare(self) -> Self:
         if self.tared_vessel and self.weighs_cap:
             raise ValueError(f"{self.name}: a tared vessel has no separate cap weight")
         return self
+
+
+class RunListRule(Frozen):
+    """How the lab sequences a run (P-13). Demo defaults are Jamie's practice: a check standard between
+    matrices and after every 10 samples of one matrix (samples prepped, not cups; spikes don't count),
+    the count restarting at each matrix."""
+
+    check_label: str = Field(default="Check standard", min_length=1, max_length=100)
+    check_between_matrices: bool = True
+    check_every: int | None = Field(default=10, ge=1)  # samples; None = only between matrices
+    opening: tuple[str, ...] = ("Calibration blank", "Check standard")
+    closing: tuple[str, ...] = ("Check standard",)
 
 
 class PrepRules(Frozen):
@@ -104,6 +117,7 @@ class PrepRules(Frozen):
     balances: tuple[str, ...] = Field(min_length=1)
     pipettes: tuple[str, ...] = ()
     cap_expiry_at_source: bool = True  # P-16: the lab may let a standard outlive its source
+    run_list: RunListRule = RunListRule()
 
     @model_validator(mode="after")
     def _unique(self) -> Self:

@@ -50,3 +50,17 @@ decisions (D-xx) live in slim-data-oss `docs/DECISIONS.md`; D-86 created this mo
   `prep_book_sent_batches` (code + version). The samples, cups and spiked elements must be as sent;
   anything else is a new batch. The host then re-evaluates in slim-data; released results it changes go
   through slim-data's correction flow and an amended report.
+
+- **P-21 The planned run list** (Jamie, 2026-10-27; P-13). slim-prep plans what goes on the instrument
+  (as the lab's raw-data generator does today, from the prep book); slim-data judges check standards
+  against the *actual* order in the instrument file, the evidence (the plan only feeds the instrument).
+  1. The lab's rule is data (`PrepRules.run_list`): a check standard between matrices (chemical + prep
+     method) and after every N samples of one matrix, counting samples prepped, not cups or spikes; the
+     count restarts at each matrix; opening and closing items (demo: calibration blank + check standard;
+     check standard). Demo N = 10, Jamie's practice.
+  2. Spikes go together at the end of their matrix block, before its check standard, or each after its
+     sample: per prep method (`spikes_at_block_end`; demo dilute-and-shoot: after its sample).
+  3. Samples run in the order the analyst gives; a new matrix starts wherever the next sample's differs.
+  4. Export: a plain CSV sample list (position, label, type, batch, sample, cup, dilution). A
+     Qtegra-specific format can come later; the lab's private capture workbook is not copied (OSS).
+  - Rejected: the run list in slim-data (it plans nothing; it reads what was run); hard-coded spacing.
