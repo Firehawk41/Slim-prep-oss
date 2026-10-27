@@ -43,8 +43,10 @@ implements, as in slim-data (`ReferenceLookup`, `StaffDirectory`).
 - **P-06 Spikes.** A spike line per cup: standard, lot, expiry, volume (µL), level (ppt). Several lines
   when an element (e.g. S) is spiked separately. An expired standard is refused at entry. Lot and expiry
   are text until slim-quality's register exists; then a spike must name a registered standard.
-  The spike goes in its own spiked cup (Jamie, Q2), slim-data's SPIKE reading. **Q2b:** what "Spike
-  Level (ppt)" means (slim-data needs the amount added in the sample's terms).
+  The spike goes in its own spiked cup (Jamie, Q2), slim-data's SPIKE reading. **Spike level is
+  calculated** (Jamie, Q2b), never typed: added = volume × standard concentration ÷ the spiked cup's
+  Net, in the sample's terms (10 µL of 1 ppm into 10 g = 1 ppb = 1000 ppt). The standard is taken as
+  1 g/mL. That is slim-data's `SpikeAddition.added`.
 - **P-07 Equipment** (100 µL / 1000 µL pipette, balance) chosen from a lab list (data). The balance is
   set once per batch ("all weights from balance X unless noted", today's book) and can be overridden per
   cup. The equipment register and calibration-due checks belong to slim-quality (phase 5); until then the
