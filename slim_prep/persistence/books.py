@@ -224,3 +224,27 @@ def _recorded(row, model) -> Recorded:
         created_by=Actor.model_validate(row.created_by),
         created_at=row.created_at,
     )
+
+
+def list_batches(session: Session, as_of: datetime | None = None) -> list[Recorded[PrepBatch]]:
+    """Every batch's latest version (as of `as_of`), newest first."""
+    return _list(session, prep_batches, ("code",), PrepBatch, as_of)
+
+
+def list_standards(session: Session, as_of: datetime | None = None) -> list[Recorded[Standard]]:
+    """Every standard's latest version (as of `as_of`), newest first."""
+    return _list(session, standards, ("name", "prepared"), Standard, as_of)
+
+
+def list_stocks(session: Session, as_of: datetime | None = None) -> list[Recorded[Stock]]:
+    return _list(session, stocks, ("name", "lot"), Stock, as_of)
+
+
+def _list(session, table: Table, key: tuple[str, ...], model, as_of) -> list:
+    rows = session.execute(
+        select(table).where(as_of_filter(table.c.created_at, as_of)).order_by(table.c.id)
+    ).all()
+    latest = {}
+    for row in rows:
+        latest[tuple(getattr(row, k) for k in key)] = row  # ordered by id: the last one wins
+    return [_recorded(row, model) for row in sorted(latest.values(), key=lambda r: r.id, reverse=True)]

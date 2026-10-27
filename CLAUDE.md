@@ -46,7 +46,8 @@ slim_prep/
 │                  #   problems (PrepRefused), actor (Role)
 ├── persistence/   # oss_guard, db (make_engine = the only create_engine), migrate, migrations/, tables,
 │                  #   types, append_only, audit; rules (publish_rules, current_rules), books (stocks,
-│                  #   standards, batches: versioned, as_of, made_from, batches_using)
+│                  #   standards, batches: versioned, as_of, list_*, made_from, batches_using)
+├── demo.py        # DEMO_RULES, demo_stock: invented, the host seeds them
 └── service/       # books: record_standard (from the book), record_batch (checks, figures, records);
                    #   handoff: results_batch, send_to_results (registers in slim-data), send_correction, sent_version;
                    #   run_list: run_list_for (recorded batches → the planned run)

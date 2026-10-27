@@ -20,6 +20,12 @@ MG_PER_UL = Decimal("0.001")  # grams per µL at 1 g/mL
 G_PER_ML = Decimal(1)
 
 
+def plain(value: Decimal) -> Decimal:
+    """Without trailing zeros, and never in exponent form: 20, not 2E+1."""
+    value = value.normalize()
+    return value.quantize(Decimal(1)) if value.as_tuple().exponent > 0 else value
+
+
 class Concentration(Frozen):
     value: Dec = Field(gt=0)
     unit: Unit
@@ -31,7 +37,7 @@ class Concentration(Frozen):
         """Scaled by `factor`, in the largest unit that keeps the value at 1 or more (20 ppm, 50 ppb)."""
         ppt = self.value * _IN_PPT[self.unit] * factor
         unit = next((u for u in _LARGEST_FIRST if ppt >= _IN_PPT[u]), "ppt")
-        return Concentration(value=(ppt / _IN_PPT[unit]).normalize(), unit=unit)
+        return Concentration(value=plain(ppt / _IN_PPT[unit]), unit=unit)
 
     def __str__(self) -> str:
         return f"{self.value} {self.unit}"

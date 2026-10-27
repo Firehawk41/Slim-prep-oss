@@ -18,6 +18,7 @@ from slim_prep.domain.base import Dec, Frozen
 from slim_prep.domain.prep import CupFigures, CupKind, PrepBatch
 from slim_prep.domain.problems import PrepRefused, Problem
 from slim_prep.domain.rules import PrepRules
+from slim_prep.domain.units import plain
 
 
 class EntryKind(IntEnum):
@@ -113,7 +114,7 @@ def run_list_csv(entries: Sequence[RunEntry]) -> str:
     writer = csv.writer(out, lineterminator="\n")
     writer.writerow(CSV_COLUMNS)
     for e in entries:
-        dilution = "" if e.dilution is None else str(e.dilution.normalize())
+        dilution = "" if e.dilution is None else str(plain(e.dilution))
         writer.writerow(
             (e.position, e.label, e.kind.name.lower(), e.batch or "", e.sample or "", e.cup or "", dilution)
         )

@@ -104,3 +104,27 @@ def test_the_database_refuses_updates_and_deletes(session, statement):
 def test_unknown_standard_is_not_found(session):
     with pytest.raises(NotFound):
         books.get_standard(session, StandardRef(name="x", prepared=datetime(2026, 1, 1).date()))
+
+
+def test_lists_show_each_records_latest_version(session):
+    rules_id = publish_rules(session, RULES, QUALITY).id
+    books.save_stock(session, stock(), ANALYST)
+    books.save_stock(session, stock(), ANALYST, 1, "typo")
+    twenty, fifty = chain()
+    books.save_standard(session, twenty, rules_id, ANALYST)
+    books.save_standard(session, fifty, rules_id, ANALYST)
+    books.save_batch(session, batch(), rules_id, ANALYST)
+    assert [r.version for r in books.list_stocks(session)] == [2]
+    assert [r.item.name for r in books.list_standards(session)] == ["50 ppb", "20 ppm"]
+    assert [r.item.code for r in books.list_batches(session)] == ["PB-0001"]
+
+
+def test_the_demo_rules_and_stock_are_valid():
+    from datetime import date
+
+    from slim_prep.demo import DEMO_RULES, demo_stock
+    from slim_prep.domain.standards import make_standard
+
+    stock_ = demo_stock(date(2027, 12, 31))
+    twenty = make_standard(DEMO_RULES, "multi-element spike", "20 ppm", stock_, date(2026, 10, 27), "ana")
+    assert str(twenty.concentration) == "20 ppm" and len(twenty.elements) == 10
