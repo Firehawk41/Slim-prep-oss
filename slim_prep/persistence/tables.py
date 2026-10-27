@@ -107,9 +107,10 @@ sent_batches = Table(
     "prep_book_sent_batches",
     metadata,
     Column("id", Integer, primary_key=True),
-    Column("code", String(50), nullable=False, unique=True),  # sent once (P-11); corrections: a later slice
-    Column("version", Integer, nullable=False),  # the batch version slim-data received
+    Column("code", String(50), nullable=False),
+    Column("version", Integer, nullable=False),  # the batch version slim-data received (P-11, P-20)
     Column("created_by_id", String(100), nullable=False),
     Column("created_by", JSON, nullable=False),
     Column("created_at", UtcDateTime(), nullable=False, server_default=db_now()),
+    UniqueConstraint("code", "version"),
 )

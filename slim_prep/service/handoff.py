@@ -3,7 +3,9 @@
 `results_batch` turns a prep batch and its figures into slim-data's `PrepBatch`: the samples, the spike
 amounts in the analysis's unit (elements the analysis doesn't measure are left out), and each cup's
 dilution. Sample cups become CUP replicates 1, 2… and spike cups SPIKE replicates, in cup-number order.
-`send_to_results` registers it in slim-data and records which version was sent. The host commits.
+`send_to_results` registers it in slim-data and records which version was sent. After that, a corrected
+batch goes with `send_correction` (P-20, slim-data D-96): its changed dilutions and spike amounts become
+the next versions there; the host then re-evaluates. The host commits.
 """
 
 from collections.abc import Collection
@@ -13,8 +15,9 @@ from slim_data.domain.enums import ReadingRole
 from slim_data.domain.observations import CupDilution, SpikeAddition
 from slim_data.domain.observations import PrepBatch as ResultsBatch
 from slim_data.domain.values import AnalyteRef, Quantity, SampleRef
-from slim_data.persistence.observations import register_batch
-from sqlalchemy import select
+from slim_data.persistence.observations import correct_prep, register_batch
+from slim_data.persistence.observations import get_batch as results_get_batch
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from slim_prep.domain.actor import Actor
@@ -82,26 +85,73 @@ def send_to_results(
     analytes: Collection[str],
     unit: str,
 ) -> ResultsBatch:
-    """Registers the batch's current version in slim-data. Once per batch: a correction after that is a
-    later slice (slim-data D-95 point 4)."""
+    """Registers the batch's current version in slim-data, once; corrections go with `send_correction`."""
     if sent_version(session, code) is not None:
-        raise PrepRefused([Problem(where=code, message="already sent to results")])
+        raise PrepRefused([Problem(where=code, message="already sent to results: send the correction")])
     recorded = books.get_batch(session, code)
     rules = get_rules(session, recorded.rules_id).rules
     sent = results_batch(recorded.item, figures(recorded.item, rules), analysis_id, analytes, unit)
     registered = register_batch(session, sent, actor)
-    set_change_context(session, Actor(id=actor.id, display=actor.display), f"send batch {code} to results")
-    session.execute(
-        sent_batches.insert().values(
-            code=code,
-            version=recorded.version,
-            created_by_id=actor.id,
-            created_by=actor.model_dump(mode="json"),
-        )
-    )
+    _record_sent(session, code, recorded.version, actor, f"send batch {code} to results")
     return registered
 
 
+def send_correction(
+    session: Session,
+    code: str,
+    actor: ResultsActor,
+    analysis_id: int,
+    analytes: Collection[str],
+    unit: str,
+) -> tuple[ResultsBatch, int]:
+    """Sends a batch corrected since it was sent: changed cup dilutions and spike amounts become their
+    next versions in slim-data, with the correction's reason (P-20, D-96). Same samples, cups and spiked
+    elements as sent: anything else is a new batch. Returns slim-data's batch and how many entries
+    changed (0: nothing to send). The host then re-evaluates the batch in slim-data."""
+    sent = sent_version(session, code)
+    if sent is None:
+        raise PrepRefused([Problem(where=code, message="not sent to results yet")])
+    recorded = books.get_batch(session, code)
+    current = results_get_batch(session, code)
+    if recorded.version == sent:
+        return current, 0
+    rules = get_rules(session, recorded.rules_id).rules
+    new = results_batch(recorded.item, figures(recorded.item, rules), analysis_id, analytes, unit)
+    shapes = (
+        ("samples", set(current.samples), set(new.samples)),
+        ("cups", _cups(current), _cups(new)),
+        ("spiked elements", _spiked(current), _spiked(new)),
+    )
+    problems = [
+        Problem(where=code, message=f"the {what} changed since it was sent: prep a new batch")
+        for what, before, after in shapes
+        if before != after
+    ]
+    if problems:
+        raise PrepRefused(problems)
+    reason = recorded.reason or f"prep batch {code} corrected"
+    corrected, changed = correct_prep(session, code, actor, reason, new.dilutions, new.spikes)
+    _record_sent(session, code, recorded.version, actor, reason)
+    return corrected, changed
+
+
 def sent_version(session: Session, code: str) -> int | None:
-    """The batch version slim-data received, or None if it hasn't been sent."""
-    return session.scalar(select(sent_batches.c.version).where(sent_batches.c.code == code))
+    """The latest batch version slim-data received, or None if it hasn't been sent."""
+    return session.scalar(select(func.max(sent_batches.c.version)).where(sent_batches.c.code == code))
+
+
+def _cups(batch: ResultsBatch) -> set:
+    return {(d.sample, d.role, d.replicate) for d in batch.dilutions}
+
+
+def _spiked(batch: ResultsBatch) -> set:
+    return {(s.sample, s.analyte) for s in batch.spikes}
+
+
+def _record_sent(session: Session, code: str, version: int, actor: ResultsActor, reason: str) -> None:
+    set_change_context(session, Actor(id=actor.id, display=actor.display), reason)
+    session.execute(
+        sent_batches.insert().values(
+            code=code, version=version, created_by_id=actor.id, created_by=actor.model_dump(mode="json")
+        )
+    )

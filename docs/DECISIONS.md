@@ -43,3 +43,10 @@ decisions (D-xx) live in slim-data-oss `docs/DECISIONS.md`; D-86 created this mo
 - **P-19 Table names start `prep_book_`** (2026-10-27, found building P-18). The database is shared and
   slim-data already has `prep_batches`; migrations 0002–0003 were renamed in place (never released).
   `tests/test_migrations.py` fails on any clash with slim-data's tables.
+
+- **P-20 Sending a correction after handoff** (Jamie, 2026-10-27; slim-data D-96). A batch corrected
+  after it was sent goes with `send_correction`: its changed cup dilutions and spike amounts become the
+  next versions in slim-data, with the correction's reason; every send is a row in
+  `prep_book_sent_batches` (code + version). The samples, cups and spiked elements must be as sent;
+  anything else is a new batch. The host then re-evaluates in slim-data; released results it changes go
+  through slim-data's correction flow and an amended report.

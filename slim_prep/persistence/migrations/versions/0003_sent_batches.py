@@ -1,4 +1,4 @@
-"""Which batch versions were handed to slim-data (P-11).
+"""Which batch versions were handed to slim-data (P-11), and corrections sent after (P-20).
 
 Revision ID: 0003
 Revises: 0002
@@ -28,7 +28,7 @@ def upgrade() -> None:
         sa.Column("created_by", sa.JSON(), nullable=False),
         sa.Column("created_at", types.UtcDateTime(), nullable=False, server_default=types.db_now()),
         sa.PrimaryKeyConstraint("id", name=op.f("pk_prep_book_sent_batches")),
-        sa.UniqueConstraint("code", name=op.f("uq_prep_book_sent_batches_code")),
+        sa.UniqueConstraint("code", "version", name=op.f("uq_prep_book_sent_batches_code")),
     )
     append_only.install(op.get_bind(), ("prep_book_sent_batches",))
 
