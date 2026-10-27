@@ -38,17 +38,24 @@ implements, as in slim-data (`ReferenceLookup`, `StaffDirectory`).
   never typed:
   - Net = Gross − Tare − Cap (Cap = 0 when the method has none).
   - Solution = Final − Tare (Tare = 0 for a tared vial: the balance reads the solution directly).
-  - **Dilution = Solution ÷ Net.** **Q1:** is it (Final − Tare) ÷ Net, given Final includes the cup?
+  - **Dilution = Solution ÷ Net** = (Final − Tare) ÷ Net (Jamie, Q1).
   - Below 1 is fine (evaporation, slim-data D-93). The average across kept cups is slim-data's (D-94).
 - **P-06 Spikes.** A spike line per cup: standard, lot, expiry, volume (µL), level (ppt). Several lines
   when an element (e.g. S) is spiked separately. An expired standard is refused at entry. Lot and expiry
   are text until slim-quality's register exists; then a spike must name a registered standard.
-  **Q2:** is the spike added to a separate spiked cup or to one of the sample's cups? Is "level" the
-  concentration it adds to the final solution?
-- **P-07 Equipment** (100 µL / 1000 µL pipette, balance) chosen from a lab list (data). Calibration-due
-  checks wait for slim-quality. **Q3:** is the balance recorded today?
+  The spike goes in its own spiked cup (Jamie, Q2), slim-data's SPIKE reading. **Q2b:** what "Spike
+  Level (ppt)" means (slim-data needs the amount added in the sample's terms).
+- **P-07 Equipment** (100 µL / 1000 µL pipette, balance) chosen from a lab list (data). The balance is
+  set once per batch ("all weights from balance X unless noted", today's book) and can be overridden per
+  cup. The equipment register and calibration-due checks belong to slim-quality (phase 5); until then the
+  list is plain data here.
 - **P-08 QC in the batch:** method blank, CRM (prepped like a sample) and their expected values, which
-  feed slim-data's `prep_batch_qc` (D-87). **Q4:** are they rows in today's book?
+  feed slim-data's `prep_batch_qc` (D-87). Not rows in today's book (Jamie, Q4): to design with the
+  standards book (P-14).
+- **P-14 The standards book, a second section of slim-prep.** Today a separate spreadsheet holds the
+  calibration standards. Making standards (stock, lot, volumes, final concentration, expiry) folds into
+  slim-prep; spike lines and check standards then name a standard made there. Purchased stocks and CRMs
+  are registered in slim-quality later. Waits for the standards spreadsheet's header.
 - **P-09 Notes and deviations** on any cup or batch, free text: the escape hatch Excel gives today.
 
 ## 4. Persistence and history
