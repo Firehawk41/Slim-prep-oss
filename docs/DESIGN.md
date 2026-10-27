@@ -1,8 +1,7 @@
-# slim-prep — design (DRAFT, not signed off)
+# slim-prep — design
 
-Input: `docs/PREP_BOOK.md` (Jamie's evaporation tab). Each numbered point below is a proposed decision
-(P-02…); Jamie signs off, amends or rejects each, then they go into `DECISIONS.md`. Open questions are
-marked **Q**.
+Input: `docs/PREP_BOOK.md` (Jamie's prep book and standards spreadsheet). Signed off by Jamie
+2026-10-27 ("go until you need input") after Q1–Q6 were answered; the decisions are in `DECISIONS.md`.
 
 ## 1. Purpose and boundaries
 
@@ -42,8 +41,8 @@ implements, as in slim-data (`ReferenceLookup`, `StaffDirectory`).
   - Below 1 is fine (evaporation, slim-data D-93). The average across kept cups is slim-data's (D-94).
 - **P-06 Spikes.** A spike line per cup: standard, lot, expiry, volume (µL), level (ppt). Several lines
   when an element (e.g. S) is spiked separately. An expired standard is refused at entry. Lot and expiry
-  are text until slim-quality's register exists; then a spike must name a registered standard.
-  The spike goes in its own spiked cup (Jamie, Q2), slim-data's SPIKE reading. **Spike level is
+  name a standard from the standards book (P-14), whose concentration and expiry are snapshotted on
+  the line. The spike goes in its own spiked cup (Jamie, Q2), slim-data's SPIKE reading. **Spike level is
   calculated** (Jamie, Q2b), never typed: added = volume × standard concentration ÷ the spiked cup's
   Net, in the sample's terms (10 µL of 1 ppm into 10 g = 1 ppb = 1000 ppt). The standard is taken as
   1 g/mL. That is slim-data's `SpikeAddition.added`.
@@ -60,9 +59,23 @@ implements, as in slim-data (`ReferenceLookup`, `StaffDirectory`).
   stock). That makes a chain from every spike back to the stock: the traceability ISO 17025 asks for.
   A standard is identified by name + prep date, as today. Spike lines and check standards name one;
   an expired one is refused. Purchased stocks and CRMs are registered in slim-quality later; until then
-  a stock is a name, lot and expiry typed here. **Q5:** where is each standard's concentration (in its
-  name, or calculated from source volume and final volume)? **Q6:** is expiry a fixed shelf life per
-  standard, and never later than its source's?
+  a stock is a name, lot, concentration, elements and expiry typed here.
+- **P-15 Recipes: the lab's standard dilution chains** (Jamie, Q5: "standardized"). A recipe is a named
+  chain from a stock, e.g. 1000 ppm → 20 ppm → 50 ppb; each step says its source (the stock or the step
+  before), the volume taken (µL), the final volume (mL) and its shelf life. Making a standard = a recipe
+  step + the actual source + date, analyst, pipettes. Its concentration (source's × volume ÷ final
+  volume) and expiry are calculated, never typed. Recipes are the lab's defaults, saved as rules (P-17).
+- **P-16 Shelf life and expiry are the lab's rules** (Jamie, Q6). Each recipe step has its own shelf
+  life (demo: 20 ppm 3 months, 50 ppb 1 week), independent of the stock's. Expiry = prep date + shelf
+  life, capped at the source's expiry unless the lab's rules say otherwise (default: capped). A source
+  already expired on the prep date is refused.
+- **P-17 Boundaries: quality sets the rules, the lab keeps the records.** Recipes, shelf lives, prep
+  method layouts and equipment lists are one versioned **prep policy** (`PrepRules`), published like a
+  slim-data ruleset; every standard and batch records the version it was made under. Only a `quality`
+  role publishes (the host's role; supervisor until it exists); analysts may draft a change for quality
+  to approve. slim-prep reads the rules through a port, so slim-quality can supply them later without
+  prep changing. No module writes another's tables: quality reads prep's records and raises findings in
+  its own; corrections go through slim-prep's correction flow, with a reason.
 - **P-09 Notes and deviations** on any cup or batch, free text: the escape hatch Excel gives today.
 
 ## 4. Persistence and history

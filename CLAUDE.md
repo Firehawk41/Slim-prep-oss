@@ -17,16 +17,16 @@ screens. **OSS sandbox only:** demo data, never a real lab's databases (`persist
 
 | File | What |
 |---|---|
-| `docs/PREP_BOOK.md` | The lab's Excel prep book as Jamie described it: the design's input. |
-| `docs/DESIGN.md` | **Draft** (P-02…P-13, open questions Q1–Q4), awaiting Jamie's sign-off. |
+| `docs/PREP_BOOK.md` | The lab's Excel prep book and standards spreadsheet as Jamie described them. |
+| `docs/DESIGN.md` | **Signed off** 2026-10-27: P-02…P-17. |
 | `docs/DECISIONS.md` | **Authoritative.** P-01…; append, never edit history. |
 
 ## Status
 
 | # | Step | State |
 |---|---|---|
-| P0 | Prep book layout from Jamie | ◐ evaporation tab (`docs/PREP_BOOK.md`) |
-| P1 | Design doc + decisions, signed off | ◐ draft (`docs/DESIGN.md`) |
+| P0 | Prep book layout from Jamie | ✅ evaporation tab + standards (`docs/PREP_BOOK.md`) |
+| P1 | Design doc + decisions, signed off | ✅ |
 | P2 | Skeleton: packaging, OSS guard, Alembic (own version table), architecture test, CI | ✅ (P-01) |
 | P3 | Domain: batch, cups, weighings, dilution, spikes, equipment, run list | |
 | P4 | Persistence: append-only tables, `as_of`, audit | |
