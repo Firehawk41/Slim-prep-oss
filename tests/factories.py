@@ -3,6 +3,7 @@
 from datetime import date, datetime
 from decimal import Decimal
 
+from slim_prep.domain.actor import Actor, Role
 from slim_prep.domain.prep import Cup, CupKind, PrepBatch, PrepSample, SpikeLine, StepRecord, Weighing
 from slim_prep.domain.rules import PrepMethod, PrepRules, Recipe, RecipeStep, ShelfLife
 from slim_prep.domain.standards import Stock, make_standard
@@ -86,3 +87,7 @@ def batch(**changes):
         samples=(evaporation_sample(),),
     )
     return PrepBatch(**{**fields, **changes})
+
+
+QUALITY = Actor(id="qm-1", display="Quinn (quality)", roles=frozenset({Role.QUALITY}))
+ANALYST = Actor(id="ana-1", display="Ana (analyst)", roles=frozenset({Role.ANALYST}))

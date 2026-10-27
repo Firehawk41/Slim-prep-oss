@@ -10,7 +10,7 @@ from slim_prep.persistence import (
 )
 from slim_prep.persistence.db import Base
 
-HEAD = "0001"
+HEAD = "0002"
 
 
 def _version(connection) -> str | None:
