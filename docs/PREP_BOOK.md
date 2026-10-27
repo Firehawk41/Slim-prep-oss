@@ -26,3 +26,11 @@ Dilution · Average · Number of Elements · Additional Elements · 100 uL Pipet
 
 Dilute-and-shoot: same idea; no pre-weighed cups (the vial is tared), no Pour Out analyst. Labs set
 their own columns per prep method: the layout is lab data, not code.
+
+## Standards spreadsheet (Jamie, 2026-10-27)
+
+`Standard · Pipet (100 uL) · Pipet (1000 uL) · Prep date · Expire date · Source · Source Prep Date · Initials`
+
+- One row per standard made. **Source + Source Prep Date** name the standard (or stock) it was made from:
+  a chain back to the purchased stock.
+- Spike level = volume × concentration ÷ net mass (Jamie): the volume in µL counts as mg (1 g/mL).

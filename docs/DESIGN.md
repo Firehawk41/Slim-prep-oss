@@ -55,9 +55,14 @@ implements, as in slim-data (`ReferenceLookup`, `StaffDirectory`).
   feed slim-data's `prep_batch_qc` (D-87). Not rows in today's book (Jamie, Q4): to design with the
   standards book (P-14).
 - **P-14 The standards book, a second section of slim-prep.** Today a separate spreadsheet holds the
-  calibration standards. Making standards (stock, lot, volumes, final concentration, expiry) folds into
-  slim-prep; spike lines and check standards then name a standard made there. Purchased stocks and CRMs
-  are registered in slim-quality later. Waits for the standards spreadsheet's header.
+  calibration standards (header in `PREP_BOOK.md`). One entry per standard made: name, prep date,
+  expiry, analyst, pipettes, and its **source** (another standard, by name + prep date, or a purchased
+  stock). That makes a chain from every spike back to the stock: the traceability ISO 17025 asks for.
+  A standard is identified by name + prep date, as today. Spike lines and check standards name one;
+  an expired one is refused. Purchased stocks and CRMs are registered in slim-quality later; until then
+  a stock is a name, lot and expiry typed here. **Q5:** where is each standard's concentration (in its
+  name, or calculated from source volume and final volume)? **Q6:** is expiry a fixed shelf life per
+  standard, and never later than its source's?
 - **P-09 Notes and deviations** on any cup or batch, free text: the escape hatch Excel gives today.
 
 ## 4. Persistence and history
