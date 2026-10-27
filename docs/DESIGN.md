@@ -1,0 +1,79 @@
+# slim-prep — design (DRAFT, not signed off)
+
+Input: `docs/PREP_BOOK.md` (Jamie's evaporation tab). Each numbered point below is a proposed decision
+(P-02…); Jamie signs off, amends or rejects each, then they go into `DECISIONS.md`. Open questions are
+marked **Q**.
+
+## 1. Purpose and boundaries
+
+The prep book, out of Excel: what was prepped, by whom, when, with which weighings, spikes and
+equipment, and the dilution factor that follows. When a batch is ready it goes to slim-data.
+
+- **In:** prep batches, cups, weighings, calculated dilution, spikes (standard, lot, expiry), pipettes
+  and balance, analysts and times, notes / deviations, the run order.
+- **Not in:** sample custody and storage (slim-samples, phase 4), the standards and equipment registers
+  (slim-quality, phase 5), results (slim-data), TR data (the host).
+
+## 2. Place in the ecosystem
+
+```
+slim-lims-oss (host: screens, transaction, TR data, staff)
+   ├── slim-prep  ── hands a ready batch to ──►  slim-data (results)
+   └── slim-data
+```
+slim-prep depends on slim-data's domain types for the handoff; slim-data never imports slim-prep.
+TR data (customer, chemical, sample ID, TAT, analyses ordered) and staff come through ports the host
+implements, as in slim-data (`ReferenceLookup`, `StaffDirectory`).
+
+## 3. Model
+
+- **P-02 Prep methods are data.** A `PrepMethod` (versioned, published like a ruleset) lists the fields
+  its book uses and how they're calculated: evaporation = pre-weighed cup, cap weight, Pour Out analyst,
+  2 cups; dilute-and-shoot = tared vial, one analyst. Labs add their own; no `if method == ...` in code.
+- **P-03 Batch → sample → cup.** A `PrepBatch` (code, method version, analysis) holds samples; each
+  sample holds cups (`Cup #` → slim-data replicate 1, 2). One cup = one row of today's book.
+- **P-04 Who and when per step.** Each step (pour out, prep) records its analyst and time; the method
+  says which steps it has.
+- **P-05 Weighings, entered in grams as Decimals** (never floats): Tare, Cap, Gross, Final. Calculated,
+  never typed:
+  - Net = Gross − Tare − Cap (Cap = 0 when the method has none).
+  - Solution = Final − Tare (Tare = 0 for a tared vial: the balance reads the solution directly).
+  - **Dilution = Solution ÷ Net.** **Q1:** is it (Final − Tare) ÷ Net, given Final includes the cup?
+  - Below 1 is fine (evaporation, slim-data D-93). The average across kept cups is slim-data's (D-94).
+- **P-06 Spikes.** A spike line per cup: standard, lot, expiry, volume (µL), level (ppt). Several lines
+  when an element (e.g. S) is spiked separately. An expired standard is refused at entry. Lot and expiry
+  are text until slim-quality's register exists; then a spike must name a registered standard.
+  **Q2:** is the spike added to a separate spiked cup or to one of the sample's cups? Is "level" the
+  concentration it adds to the final solution?
+- **P-07 Equipment** (100 µL / 1000 µL pipette, balance) chosen from a lab list (data). Calibration-due
+  checks wait for slim-quality. **Q3:** is the balance recorded today?
+- **P-08 QC in the batch:** method blank, CRM (prepped like a sample) and their expected values, which
+  feed slim-data's `prep_batch_qc` (D-87). **Q4:** are they rows in today's book?
+- **P-09 Notes and deviations** on any cup or batch, free text: the escape hatch Excel gives today.
+
+## 4. Persistence and history
+
+- **P-10 Append-only, as slim-data:** rows are never updated or deleted (triggers); a correction is a
+  new version with a reason and who made it; `as_of` shows any past state. Portable schema, own Alembic
+  version table, no FKs into other modules' tables. Repositories flush; the host commits.
+
+## 5. Handoff to slim-data
+
+- **P-11 "Ready" sends the batch:** slim-prep builds slim-data's `PrepBatch` (code, analysis, prep
+  method, samples, spikes, QC expected values) and each cup's dilution. After that, a correction to a
+  weighing is a new version, and slim-data re-evaluates (its correction flow).
+- **P-12 Dilution from prep beats the file.** Today the dilution comes from the instrument file
+  (`dilution_factor` / Qtegra's Dilution Factor). When a batch came from slim-prep, its cups' dilutions
+  win; a file that disagrees is flagged at import. Needs a slim-data decision (D-95) when we get there.
+- **P-13 Run order:** the batch's cups in run order, exportable as the instrument's sample list. This
+  unlocks CCV bracketing in slim-data (D-87 point 4). Later step.
+
+## 6. Build order
+
+P3 domain (methods, batch, cups, calculations) → P4 persistence → P5 handoff (+ slim-data D-95) →
+P6 host screens (a grid like today's book) → P7 demo scenarios, `verify`, walkthrough.
+
+## 7. Parked
+
+Balance integration (weights read from the balance), equipment calibration checks and the standards
+register (slim-quality), label printing, the instrument sample-list export format.

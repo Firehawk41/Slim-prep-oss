@@ -18,6 +18,7 @@ screens. **OSS sandbox only:** demo data, never a real lab's databases (`persist
 | File | What |
 |---|---|
 | `docs/PREP_BOOK.md` | The lab's Excel prep book as Jamie described it: the design's input. |
+| `docs/DESIGN.md` | **Draft** (P-02…P-13, open questions Q1–Q4), awaiting Jamie's sign-off. |
 | `docs/DECISIONS.md` | **Authoritative.** P-01…; append, never edit history. |
 
 ## Status
@@ -25,7 +26,7 @@ screens. **OSS sandbox only:** demo data, never a real lab's databases (`persist
 | # | Step | State |
 |---|---|---|
 | P0 | Prep book layout from Jamie | ◐ evaporation tab (`docs/PREP_BOOK.md`) |
-| P1 | Design doc + decisions, signed off | next |
+| P1 | Design doc + decisions, signed off | ◐ draft (`docs/DESIGN.md`) |
 | P2 | Skeleton: packaging, OSS guard, Alembic (own version table), architecture test, CI | ✅ (P-01) |
 | P3 | Domain: batch, cups, weighings, dilution, spikes, equipment, run list | |
 | P4 | Persistence: append-only tables, `as_of`, audit | |
@@ -33,7 +34,7 @@ screens. **OSS sandbox only:** demo data, never a real lab's databases (`persist
 | P6 | Host screens in slim-lims-oss | |
 | P7 | Demo scenarios, `verify`, README, walkthrough | |
 
-Needs slim-data first: D-93 (dilution below 1), D-94 (MDL from the kept cups' average dilution).
+slim-data D-93 (dilution below 1) and D-94 (MDL from the kept cups) ✅.
 
 ## File map
 
