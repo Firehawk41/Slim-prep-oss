@@ -3,7 +3,7 @@
 > **Read first.** Jamie is the **designer**; Claude writes the code, then explains it until Jamie can
 > defend every decision in an interview. Raise any design change as a new decision (with a
 > recommendation) before building it; push back when you disagree. **Short replies; Jamie is
-> token-constrained.** Read slim-data-oss's CLAUDE.md for the ecosystem's rules; this repo follows them.
+> token-constrained.** Log who decided what in slim-lims-oss `docs/DEV_DIARY.md`. Read slim-data-oss's CLAUDE.md for the ecosystem's rules; this repo follows them.
 
 ## What this is
 
