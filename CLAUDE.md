@@ -66,7 +66,7 @@ Run: `pip install -e ".[dev]" && pytest`; `ruff check . && ruff format --check .
 - Prep layouts, limits and equipment lists are lab **data**, never `if demo:` branches. Demo values are
   invented, never a real lab's.
 - Table names start `prep_book_` (P-19): the database is shared with slim-data.
-- slim-prep depends on slim-data (git, on D-95's branch until merged, then `@main`); never the reverse.
+- slim-prep depends on slim-data (git, `@main`); never the reverse.
 - Portable schema (SQLite + Postgres): enums as ints, JSON via SQLAlchemy `JSON`, no ARRAY, no FKs into
   other modules' tables. Repositories flush; the caller commits.
 - Every push: ruff, full tests, coverage gate.
