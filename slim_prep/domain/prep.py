@@ -6,12 +6,12 @@ against the prep method and the lab's lists, and refuses with every problem at o
 """
 
 import re
-from datetime import date, datetime
+from datetime import date
 from decimal import Decimal
 from enum import IntEnum
 from typing import Self
 
-from pydantic import Field, field_validator, model_validator
+from pydantic import AwareDatetime, Field, field_validator, model_validator
 
 from slim_prep.domain.base import Dec, Frozen
 from slim_prep.domain.problems import PrepRefused, Problem
@@ -20,6 +20,9 @@ from slim_prep.domain.standards import Standard, StandardRef
 from slim_prep.domain.units import MG_PER_UL, Concentration
 
 _SAMPLE_RE = re.compile(r"^TR\d{5,}-\d+$")
+# P-26: a batch code is safe anywhere it goes (a CSV cell, a file name, a URL): letters, digits, dot,
+# hyphen and underscore, starting with a letter or digit.
+BATCH_CODE = r"^[A-Za-z0-9][A-Za-z0-9._-]{0,49}$"
 Grams = Field(default=None, ge=0)
 Note = Field(default=None, max_length=1000)
 
@@ -102,14 +105,16 @@ class PrepSample(Frozen):
 
 
 class StepRecord(Frozen):
-    """Who did a step and when (P-04)."""
+    """Who did a step and when (P-04): the analyst's initials as the book shows them, and the host's id
+    for the person (P-27; None only on records made before it). The time is entered, with its zone (P-25)."""
 
     analyst: str = Field(min_length=1, max_length=100)
-    at: datetime
+    analyst_id: str | None = Field(default=None, max_length=100)
+    at: AwareDatetime
 
 
 class PrepBatch(Frozen):
-    code: str = Field(min_length=1, max_length=50)
+    code: str = Field(pattern=BATCH_CODE)
     method: str = Name
     analysis: str = Field(min_length=1, max_length=50)  # the analysis code, e.g. 10_elements_icpms
     balance: str = Name  # P-07: "all weights from this balance unless noted"
@@ -123,6 +128,8 @@ class PrepBatch(Frozen):
         names = [s.sample for s in self.samples]
         if len(set(names)) != len(names):
             raise ValueError("a sample appears twice in the batch")
+        if self.pour_out is not None and self.pour_out.at > self.prep.at:
+            raise ValueError("the pour-out comes before the prep, not after it")
         return self
 
 

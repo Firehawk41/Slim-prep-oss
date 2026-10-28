@@ -40,6 +40,8 @@ DEMO_RULES = PrepRules(
     balances=("BAL-1", "BAL-2"),
     pipettes=("P100-1", "P100-2", "P1000-1"),
     run_list=RunListRule(),
+    batch_prefix="PREP-",
+    entry_window_days=7,
 )
 
 

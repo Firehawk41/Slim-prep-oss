@@ -14,7 +14,17 @@ from slim_prep.domain.problems import PrepRefused
 from slim_prep.persistence import books
 from slim_prep.persistence.rules import publish_rules
 from slim_prep.service.handoff import results_batch, send_correction, send_to_results, sent_version
-from tests.factories import ANALYST, QUALITY, RULES, batch, chain, conc, evaporation_cup, evaporation_sample
+from tests.factories import (
+    ANALYST,
+    QUALITY,
+    RULES,
+    SAMPLES,
+    batch,
+    chain,
+    conc,
+    evaporation_cup,
+    evaporation_sample,
+)
 
 RESULTS_ANA = ResultsActor(
     id="ana-1",
@@ -69,12 +79,12 @@ def recorded(session):
 def test_send_registers_the_batch_in_slim_data_once(recorded):
     session = recorded
     assert sent_version(session, "PB-0001") is None
-    send_to_results(session, "PB-0001", RESULTS_ANA, 7, METALS, "ppb")
+    send_to_results(session, "PB-0001", RESULTS_ANA, SAMPLES, 7, METALS, "ppb")
     stored = results_get_batch(session, "PB-0001")
     assert len(stored.dilutions) == 3 and stored.spike_added(stored.samples[0], stored.spikes[0].analyte)
     assert sent_version(session, "PB-0001") == 1
     with pytest.raises(PrepRefused, match="already sent to results: send the correction"):
-        send_to_results(session, "PB-0001", RESULTS_ANA, 7, METALS, "ppb")
+        send_to_results(session, "PB-0001", RESULTS_ANA, SAMPLES, 7, METALS, "ppb")
 
 
 def _resave(session, version, reason, **changes):
@@ -85,23 +95,23 @@ def _resave(session, version, reason, **changes):
 def test_a_correction_after_sending_becomes_the_next_version_in_slim_data(recorded):
     session = recorded
     with pytest.raises(PrepRefused, match="not sent to results yet"):
-        send_correction(session, "PB-0001", RESULTS_ANA, 7, METALS, "ppb")
-    send_to_results(session, "PB-0001", RESULTS_ANA, 7, METALS, "ppb")
-    assert send_correction(session, "PB-0001", RESULTS_ANA, 7, METALS, "ppb")[1] == 0  # nothing new
+        send_correction(session, "PB-0001", RESULTS_ANA, SAMPLES, 7, METALS, "ppb")
+    send_to_results(session, "PB-0001", RESULTS_ANA, SAMPLES, 7, METALS, "ppb")
+    assert send_correction(session, "PB-0001", RESULTS_ANA, SAMPLES, 7, METALS, "ppb")[1] == 0  # nothing new
     sample = evaporation_sample()
     cups = (evaporation_cup(1, final="2.7000"), *sample.cups[1:])  # cup 1's final weight misread
     _resave(session, 1, "cup 1 final weight misread", samples=(sample.model_copy(update={"cups": cups}),))
-    corrected, changed = send_correction(session, "PB-0001", RESULTS_ANA, 7, METALS, "ppb")
+    corrected, changed = send_correction(session, "PB-0001", RESULTS_ANA, SAMPLES, 7, METALS, "ppb")
     assert changed == 1 and sent_version(session, "PB-0001") == 2
     assert corrected.prep_dilution(corrected.samples[0], ReadingRole.CUP, 1) == Decimal("0.07")
 
 
 def test_a_correction_that_changes_the_batchs_shape_is_refused(recorded):
     session = recorded
-    send_to_results(session, "PB-0001", RESULTS_ANA, 7, METALS, "ppb")
+    send_to_results(session, "PB-0001", RESULTS_ANA, SAMPLES, 7, METALS, "ppb")
     _resave(session, 1, "forgot a sample", samples=(evaporation_sample(), evaporation_sample("TR00042-02")))
     with pytest.raises(PrepRefused) as refused:
-        send_correction(session, "PB-0001", RESULTS_ANA, 7, METALS, "ppb")
+        send_correction(session, "PB-0001", RESULTS_ANA, SAMPLES, 7, METALS, "ppb")
     assert [p.message.split(" changed")[0] for p in refused.value.problems] == [
         "the samples",
         "the cups",

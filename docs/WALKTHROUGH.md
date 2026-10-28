@@ -17,10 +17,15 @@ Open the demo (slim-lims-oss, after `scripts/seed_demo.py`) as the supervisor pe
   source is refused at entry, not found at audit.
 
 ## 3. The batch grid (P-03–P-07)
-- **Show:** batch PB-PREP-1: one row per cup, as the Excel tab. The batch page shows net, solution,
-  dilution (0.06: evaporation concentrates) and spike level, unrounded.
+- **Show:** "New prep batch": the next code in the lab's series (PREP-0002) is filled in; "Choose the
+  samples" lists only samples checked in that ordered the analysis (P-23). Then batch PREP-0001: one row
+  per cup, as the Excel tab, with the prep and pour-out times entered and the pour-out analyst chosen
+  from the staff list (P-25, P-27). The batch page shows net, solution, dilution (0.06: evaporation
+  concentrates) and spike level, unrounded.
 - **Why:** typing a dilution is the classic transcription error; here it follows from the weighings.
-  A grid the rules refuse comes back with every problem and the entries kept.
+  Picking samples instead of typing them removes the other one, and every sample is checked against its
+  request again when recorded and sent. A grid the rules refuse comes back with every problem and the
+  entries kept. A correction stays under the batch's own rules; moving to newer ones is its own step (P-24).
 
 ## 4. Sending to results (P-18, slim-data D-95)
 - **Show:** "Sent to results: version 1"; in Results, the batch's readings carry 0.06.

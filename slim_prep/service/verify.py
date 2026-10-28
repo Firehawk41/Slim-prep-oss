@@ -74,8 +74,9 @@ def _remake(session: Session, recorded) -> str | None:
         else:
             source = books.get_standard(session, stored.source, as_of=then).item
         again = make_standard(
-            rules, stored.recipe, stored.name, source, stored.prepared, stored.analyst, stored.pipettes
-        )
+            rules, stored.recipe, stored.name, source, stored.prepared, stored.analyst, stored.pipettes,
+            stored.analyst_id,
+        )  # fmt: skip
     except (PrepRefused, NotFound) as error:
         return f"can't be remade: {error}"
     fields = ("concentration", "elements", "expires")
