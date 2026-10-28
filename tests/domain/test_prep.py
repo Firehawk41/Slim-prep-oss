@@ -1,6 +1,6 @@
 """The prep book's figures (P-03…P-07): net, solution, dilution, spike level; checks against the rules."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 from decimal import Decimal
 
 import pytest
@@ -81,12 +81,13 @@ def test_cup_counts_follow_the_method():
 
 
 def test_an_expired_or_later_standard_is_refused():
-    late = datetime(2026, 11, 4, 9, 0)  # the 50 ppb keeps one week: through 3 Nov
+    late = datetime(2026, 11, 4, 9, 0, tzinfo=UTC)  # the 50 ppb keeps one week: through 3 Nov
     assert problems(prep=StepRecord(analyst="ana", at=late)) == [
         "TR00042-01 cup 3: 50 ppb (2026-10-27) expired on 2026-11-03"
     ]
-    early = datetime(2026, 10, 26, 9, 0)
-    assert problems(prep=StepRecord(analyst="ana", at=early)) == [
+    early = datetime(2026, 10, 26, 9, 0, tzinfo=UTC)
+    poured = StepRecord(analyst="pat", at=early)
+    assert problems(prep=StepRecord(analyst="ana", at=early), pour_out=poured) == [
         "TR00042-01 cup 3: 50 ppb (2026-10-27) was made after 2026-10-26"
     ]
 

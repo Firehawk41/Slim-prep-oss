@@ -17,6 +17,7 @@ from tests.factories import (
     ANALYST,
     QUALITY,
     RULES,
+    SAMPLES,
     batch,
     chain,
     conc,
@@ -40,7 +41,7 @@ def _book(session):
 
 def test_a_sound_book_verifies(session):
     _book(session)
-    send_to_results(session, "PB-0001", RESULTS_ANA, 7, METALS, "ppb")
+    send_to_results(session, "PB-0001", RESULTS_ANA, SAMPLES, 7, METALS, "ppb")
     report = verify(session)
     assert report.ok and (report.standards, report.batches, report.sent) == (2, 1, 1)
 
@@ -71,7 +72,7 @@ def test_a_batch_whose_spike_or_rules_dont_hold_is_reported(session):
 
 def test_slim_data_holding_other_dilutions_than_the_prep_book_is_reported(session):
     _book(session)
-    send_to_results(session, "PB-0001", RESULTS_ANA, 7, METALS, "ppb")
+    send_to_results(session, "PB-0001", RESULTS_ANA, SAMPLES, 7, METALS, "ppb")
     other = CupDilution(sample=SampleRef.parse("TR00042-01"), role=1, replicate=1, dilution=Decimal("0.5"))
     correct_prep(session, "PB-0001", RESULTS_ANA, "changed behind slim-prep's back", dilutions=[other])
     assert verify(session).problems == (

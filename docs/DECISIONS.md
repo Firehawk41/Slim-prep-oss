@@ -70,3 +70,40 @@ decisions (D-xx) live in slim-data-oss `docs/DECISIONS.md`; D-86 created this mo
   concentration, elements, expiry); every batch version still passes its rules and its spike lines say
   what the standards book said then; every batch sent to results: slim-data holds the cup dilutions of
   the version last sent. The host's `cli verify` runs it beside slim-data's.
+
+## The 2026-10-28 review (slim-lims-oss `docs/REVIEW_2026-10-28.md`, B1–B10)
+
+Proposed by Claude in one design turn, agreed by Jamie (2026-10-28), who added the picker to P-23.
+Guards: `tests/test_review_guards.py` here, `tests/test_prep.py` in slim-lims-oss.
+
+- **P-23 The TR port; samples are picked, not typed** (B1). slim-prep asks the host about each sample
+  through `SampleLookup` (`domain/ports.py`, as slim-data's `ReferenceLookup`): its state (not received,
+  open, cancelled, closed), the analyses ordered for it and its chemical (name and matched SLIM ID). Every
+  sample is checked when a batch is recorded, corrected and sent: it exists, is open, and ordered the
+  batch's analysis. The send check catches a request cancelled in between (it replaces the host's own
+  check, D-99). The run list groups by the matched chemical, so "IPA" and "isopropanol" are one matrix.
+  The new-batch screen lists the open samples that ordered the analysis (`open_samples`) to tick, instead
+  of typed IDs (Jamie: "essential … reduces friction"). What no software catches is the wrong bottle with
+  the right label on the screen: that stays the bench's label check (barcodes later, slim-samples).
+  - Rejected: slim-prep reading the TR tables (modules never read another's tables); checking only at send
+    (the analyst finds out at the bench, not later).
+- **P-24 A correction keeps what makes the batch that batch** (B2, B9). Code (the key), method, analysis
+  and rules version stay; `record_batch` refuses a correction that changes them. A correction is checked
+  against the batch's own rules, not the lab's current ones; `move_to_rules(code, rules_id, reason)`
+  rechecks the batch under other rules and records it as a new version, with a reason (a button on the
+  batch page when newer rules exist).
+- **P-25 Times are entered, zoned and bounded** (B4). The prep and pour-out times are entered (the screen
+  offers now, in lab time) and must carry a zone (`AwareDatetime`; the host reads a bare time as the
+  lab's). Never in the future; the pour-out not after the prep; a new batch's prep no more than
+  `PrepRules.entry_window_days` back (demo 7; None: no bound).
+- **P-26 Batch codes** (B6, B8). Every code is safe anywhere it goes: letters, digits, `.`, `_`, `-`,
+  starting with a letter or digit (no CSV formula, no path in a file name). The lab's series is rules
+  data, `PrepRules.batch_prefix` + 4 digits (demo `PREP-0001`); the screen offers the next free code. A new
+  batch whose code is already a batch in results is refused; if an instrument file takes the code between
+  recording and sending, the send says so plainly. The run-list CSV quotes any cell starting `= + - @`.
+  - Rejected: a regex as rules data (harder for quality to write and to read); preventing the file race
+    (slim-data would need to know slim-prep: a module rule).
+- **P-27 Who, and how the host knows** (B7). The actor carries its identity source (authenticated or
+  asserted, as slim-data's D-50); a step records the analyst's initials and the host's id for them; a
+  standard records initials and id the same way (it had the id only). The pour-out analyst is chosen
+  from the staff list. Records made before this read as before (the new fields are optional).

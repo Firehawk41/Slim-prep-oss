@@ -40,12 +40,12 @@ class RunEntry(Frozen):
 
 def plan_run(
     batches: Sequence[tuple[PrepBatch, tuple[CupFigures, ...]]],
-    chemicals: Mapping[str, str],
+    matrices: Mapping[str, str],
     rules: PrepRules,
 ) -> tuple[RunEntry, ...]:
-    """The run list for these batches (each with its figures), in the order given. `chemicals` gives
-    each sample's chemical (from the TR)."""
-    missing = [s.sample for b, _ in batches for s in b.samples if s.sample not in chemicals]
+    """The run list for these batches (each with its figures), in the order given. `matrices` gives
+    each sample's chemical, from the TR: the matched SLIM chemical where there is one (P-23)."""
+    missing = [s.sample for b, _ in batches for s in b.samples if s.sample not in matrices]
     if missing:
         raise PrepRefused([Problem(where=s, message="no chemical for this sample") for s in missing])
     rule = rules.run_list
@@ -68,7 +68,7 @@ def plan_run(
         if method is None:
             raise PrepRefused([Problem(where=batch.code, message=f"no prep method {batch.method!r}")])
         for sample in batch.samples:
-            this = (chemicals[sample.sample].upper(), method.name)
+            this = (matrices[sample.sample].upper(), method.name)
             if matrix is not None and this != matrix:
                 rows += held
                 held = []
@@ -109,13 +109,20 @@ CSV_COLUMNS = ("position", "label", "type", "batch", "sample_id", "cup", "diluti
 
 
 def run_list_csv(entries: Sequence[RunEntry]) -> str:
-    """The run list as a plain CSV sample list for the instrument (P-13)."""
+    """The run list as a plain CSV sample list for the instrument (P-13). A cell a spreadsheet would read
+    as a formula is written as text (P-26; review B8)."""
     out = io.StringIO()
     writer = csv.writer(out, lineterminator="\n")
     writer.writerow(CSV_COLUMNS)
     for e in entries:
         dilution = "" if e.dilution is None else str(plain(e.dilution))
-        writer.writerow(
-            (e.position, e.label, e.kind.name.lower(), e.batch or "", e.sample or "", e.cup or "", dilution)
-        )
+        row = (e.position, e.label, e.kind.name.lower(), e.batch or "", e.sample or "", e.cup or "", dilution)
+        writer.writerow(tuple(_as_text(cell) for cell in row))
     return out.getvalue()
+
+
+def _as_text(cell):
+    """A leading = + - @ (or a tab or CR before one) makes a spreadsheet run the cell: quote it."""
+    if isinstance(cell, str) and cell[:1] in ("=", "+", "-", "@", "\t", "\r"):
+        return "'" + cell
+    return cell

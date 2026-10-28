@@ -45,7 +45,8 @@ class Standard(Frozen):
     name: str = Name  # the recipe step's name
     prepared: date
     source: StandardRef | Stock
-    analyst: str = Field(min_length=1, max_length=100)
+    analyst: str = Field(min_length=1, max_length=100)  # initials, as the book shows them (P-27)
+    analyst_id: str | None = Field(default=None, max_length=100)  # the host's id; None before P-27
     pipettes: tuple[str, ...] = ()
     concentration: Concentration
     elements: tuple[str, ...] = Field(min_length=1)
@@ -64,6 +65,7 @@ def make_standard(
     prepared: date,
     analyst: str,
     pipettes: tuple[str, ...] = (),
+    analyst_id: str | None = None,
 ) -> Standard:
     """A new standard, or PrepRefused with every reason it can't be made."""
     problems: list[Problem] = []
@@ -102,6 +104,7 @@ def make_standard(
         prepared=prepared,
         source=from_,
         analyst=analyst,
+        analyst_id=analyst_id,
         pipettes=pipettes,
         concentration=source.concentration.times(made.volume_ul * MG_PER_UL / (made.final_ml * G_PER_ML)),
         elements=source.elements,

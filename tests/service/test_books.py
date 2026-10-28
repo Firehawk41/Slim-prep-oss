@@ -3,19 +3,33 @@
 from datetime import timedelta
 
 import pytest
+from slim_data.persistence import migrate as results_migrate
 
 from slim_prep.domain.prep import SpikeLine
 from slim_prep.domain.problems import PrepRefused
 from slim_prep.persistence import books
 from slim_prep.persistence.rules import publish_rules
 from slim_prep.service.books import record_batch, record_standard
-from tests.factories import ANALYST, QUALITY, RULES, SPIKE_RECIPE, TODAY, batch, conc, evaporation_cup, stock
+from tests.factories import (
+    ANALYST,
+    NOW,
+    QUALITY,
+    RULES,
+    SAMPLES,
+    SPIKE_RECIPE,
+    TODAY,
+    batch,
+    conc,
+    evaporation_cup,
+    stock,
+)
 
 R = SPIKE_RECIPE.name
 
 
 @pytest.fixture
 def book(session):
+    results_migrate.upgrade(session.connection())  # slim-prep checks codes against slim-data's batches
     rules_id = publish_rules(session, RULES, QUALITY).id
     books.save_stock(session, stock(), ANALYST)
     twenty = record_standard(
@@ -28,7 +42,8 @@ def book(session):
 def test_standards_are_made_from_the_book(book):
     _, twenty, fifty = book
     assert twenty.concentration == conc("20") and fifty.concentration == conc("50", "ppb")
-    assert twenty.analyst == ANALYST.id and fifty.pipettes == ("P100-1",)
+    assert (twenty.analyst, twenty.analyst_id) == (ANALYST.display, ANALYST.id)  # P-27
+    assert fifty.pipettes == ("P100-1",)
 
 
 def test_a_standard_correction_is_a_new_version(session, book):
@@ -41,7 +56,7 @@ def test_a_standard_correction_is_a_new_version(session, book):
 
 def test_a_batch_is_checked_calculated_and_recorded(session, book):
     rules_id, _, _ = book
-    recorded, cups = record_batch(session, batch(), rules_id, ANALYST)
+    recorded, cups = record_batch(session, batch(), rules_id, ANALYST, SAMPLES, NOW)
     assert recorded.version == 1 and len(cups) == 3 and str(cups[0].dilution) == "0.06"
     assert cups[2].added[0] == ("Cu", conc("50", "ppt"))
 
@@ -59,7 +74,14 @@ def test_a_spike_must_match_the_standards_book(session, book):
         evaporation_cup(4, kind=sample.cups[2].kind, spikes=(missing,)),
     )
     with pytest.raises(PrepRefused) as refused:
-        record_batch(session, batch(samples=(sample.model_copy(update={"cups": cups}),)), rules_id, ANALYST)
+        record_batch(
+            session,
+            batch(samples=(sample.model_copy(update={"cups": cups}),)),
+            rules_id,
+            ANALYST,
+            SAMPLES,
+            NOW,
+        )
     assert [str(p) for p in refused.value.problems] == [
         "TR00042-01 cup 3: 50 ppb (2026-10-27): the line's concentration, elements or expiry differ from the "
         "standards book",
@@ -70,6 +92,6 @@ def test_a_spike_must_match_the_standards_book(session, book):
 def test_a_batch_that_fails_the_rules_is_not_recorded(session, book):
     rules_id, _, _ = book
     with pytest.raises(PrepRefused, match="records who poured out"):
-        record_batch(session, batch(pour_out=None), rules_id, ANALYST)
+        record_batch(session, batch(pour_out=None), rules_id, ANALYST, SAMPLES, NOW)
     with pytest.raises(books.NotFound):
         books.get_batch(session, "PB-0001")

@@ -118,6 +118,11 @@ class PrepRules(Frozen):
     pipettes: tuple[str, ...] = ()
     cap_expiry_at_source: bool = True  # P-16: the lab may let a standard outlive its source
     run_list: RunListRule = RunListRule()
+    # P-26: the lab's batch codes are the prefix and a number of 4+ digits (demo PREP-0001), so they
+    # can't collide with codes an instrument file brings to results. None: any code of the safe shape.
+    batch_prefix: str | None = Field(default=None, pattern=r"^[A-Za-z][A-Za-z0-9-]{0,19}$")
+    # P-25: a new batch's prep time is no more than this many days back. None: no bound.
+    entry_window_days: int | None = Field(default=None, ge=0)
 
     @model_validator(mode="after")
     def _unique(self) -> Self:
@@ -136,3 +141,9 @@ class PrepRules(Frozen):
 
     def recipe(self, name: str) -> Recipe | None:
         return next((r for r in self.recipes if r.name == name), None)
+
+    def batch_code_fits(self, code: str) -> bool:
+        if self.batch_prefix is None:
+            return True
+        rest = code.removeprefix(self.batch_prefix)
+        return rest != code and len(rest) >= 4 and rest.isascii() and rest.isdigit()
