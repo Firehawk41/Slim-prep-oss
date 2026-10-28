@@ -19,7 +19,8 @@ screens. **OSS sandbox only:** demo data, never a real lab's databases (`persist
 |---|---|
 | `docs/PREP_BOOK.md` | The lab's Excel prep book and standards spreadsheet as Jamie described them. |
 | `docs/DESIGN.md` | **Signed off** 2026-10-27: P-02…P-17. |
-| `docs/DECISIONS.md` | **Authoritative.** P-01…; append, never edit history. |
+| `docs/DECISIONS.md` | **Authoritative.** P-01…P-22; append, never edit history. |
+| `docs/WALKTHROUGH.md` | The guided tour: what to show and the decision behind each part. |
 
 ## Status
 
@@ -31,8 +32,8 @@ screens. **OSS sandbox only:** demo data, never a real lab's databases (`persist
 | P3 | Domain: rules (methods, recipes, shelf life), standards book, batch / cups / weighings, figures | ✅ |
 | P4 | Persistence: append-only tables, `as_of`, audit; service `record_standard` / `record_batch` | ✅ |
 | P5 | Handoff to slim-data (`PrepBatch`, dilution per cup, run order) | ✅ `send_to_results` (P-18, D-95), `send_correction` (P-20, D-96), run list + CSV (P-21) |
-| P6 | Host screens in slim-lims-oss | ◐ slice 1 ✅ (/prep: standards book, batch grid, send, run list CSV), slice 2 ✅ (on-screen correction); next: P7 |
-| P7 | Demo scenarios, `verify`, README, walkthrough | ◐ `verify` ✅ |
+| P6 | Host screens in slim-lims-oss | ✅ (/prep: standards book, batch grid, send, correction, run list CSV) |
+| P7 | Demo scenarios, `verify`, README, walkthrough | ✅ (demo scenario in slim-lims-oss `demo_prep.py`; walkthrough with Jamie to do) |
 
 slim-data D-93 (dilution below 1) and D-94 (MDL from the kept cups) ✅.
 
