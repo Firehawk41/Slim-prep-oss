@@ -64,3 +64,9 @@ decisions (D-xx) live in slim-data-oss `docs/DECISIONS.md`; D-86 created this mo
   4. Export: a plain CSV sample list (position, label, type, batch, sample, cup, dilution). A
      Qtegra-specific format can come later; the lab's private capture workbook is not copied (OSS).
   - Rejected: the run list in slim-data (it plans nothing; it reads what was run); hard-coded spacing.
+
+- **P-22 `verify` for the prep book** (2026-10-28, P7; as slim-data's D-76). Read-only: every standard
+  version is remade from its recipe step and its source as they stood when it was recorded (same
+  concentration, elements, expiry); every batch version still passes its rules and its spike lines say
+  what the standards book said then; every batch sent to results: slim-data holds the cup dilutions of
+  the version last sent. The host's `cli verify` runs it beside slim-data's.

@@ -32,7 +32,7 @@ screens. **OSS sandbox only:** demo data, never a real lab's databases (`persist
 | P4 | Persistence: append-only tables, `as_of`, audit; service `record_standard` / `record_batch` | ✅ |
 | P5 | Handoff to slim-data (`PrepBatch`, dilution per cup, run order) | ✅ `send_to_results` (P-18, D-95), `send_correction` (P-20, D-96), run list + CSV (P-21) |
 | P6 | Host screens in slim-lims-oss | ◐ slice 1 ✅ (/prep: standards book, batch grid, send, run list CSV), slice 2 ✅ (on-screen correction); next: P7 |
-| P7 | Demo scenarios, `verify`, README, walkthrough | |
+| P7 | Demo scenarios, `verify`, README, walkthrough | ◐ `verify` ✅ |
 
 slim-data D-93 (dilution below 1) and D-94 (MDL from the kept cups) ✅.
 
@@ -50,7 +50,8 @@ slim_prep/
 ├── demo.py        # DEMO_RULES, demo_stock: invented, the host seeds them
 └── service/       # books: record_standard (from the book), record_batch (checks, figures, records);
                    #   handoff: results_batch, send_to_results (registers in slim-data), send_correction, sent_version;
-                   #   run_list: run_list_for (recorded batches → the planned run)
+                   #   run_list: run_list_for (recorded batches → the planned run);
+                   #   verify: remake every standard, recheck every batch, compare with slim-data (P7)
 tests/             # factories (demo rules, chain, batch); domain/; conftest (SQLite per test, or TEST_DATABASE_URL); architecture, OSS guard, migrations
 .github/workflows/ci.yml  # ruff + {SQLite, Postgres 16} × {3.11, 3.12} + 95% branch coverage on domain
 ```

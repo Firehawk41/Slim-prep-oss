@@ -248,3 +248,13 @@ def _list(session, table: Table, key: tuple[str, ...], model, as_of) -> list:
     for row in rows:
         latest[tuple(getattr(row, k) for k in key)] = row  # ordered by id: the last one wins
     return [_recorded(row, model) for row in sorted(latest.values(), key=lambda r: r.id, reverse=True)]
+
+
+def every_version(session: Session, kind: str) -> list[Recorded]:
+    """Every stored version of every stock, standard or batch (`kind`), oldest first: what `verify` checks."""
+    table, model = {
+        "stock": (stocks, Stock),
+        "standard": (standards, Standard),
+        "batch": (prep_batches, PrepBatch),
+    }[kind]
+    return [_recorded(row, model) for row in session.execute(select(table).order_by(table.c.id)).all()]
