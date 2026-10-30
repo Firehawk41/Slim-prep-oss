@@ -12,8 +12,7 @@ from datetime import timedelta
 
 from slim_data.domain.enums import ReadingRole
 from slim_data.domain.values import SampleRef
-from slim_data.persistence._rows import NotFound as ResultsNotFound
-from slim_data.persistence.observations import get_batch as results_batch
+from slim_data.service.handoff import prepped_batch
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -111,9 +110,8 @@ def _in_results(session: Session, code: str, version: int) -> str | None:
     recorded = next((r for r in books.history_batch(session, code) if r.version == version), None)
     if recorded is None:
         return "that version isn't in the prep book"
-    try:
-        held = results_batch(session, code)
-    except ResultsNotFound:
+    held = prepped_batch(session, code)
+    if held is None:
         return "slim-data has no such batch"
     cups = figures(recorded.item, get_rules(session, recorded.rules_id).rules)
     role = {CupKind.SAMPLE: ReadingRole.CUP, CupKind.SPIKE: ReadingRole.SPIKE}

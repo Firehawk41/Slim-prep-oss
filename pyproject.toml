@@ -12,9 +12,9 @@ dependencies = [
     "pydantic>=2.6,<3.0",
     "sqlalchemy>=2.0,<3.0",
     "alembic>=1.13",
-    # The results module a ready batch is handed to (P-11). Not on PyPI; co-developing:
-    # pip install -e ../slim-data-oss
-    "slim-data @ git+https://github.com/Firehawk41/slim-data-oss@main",
+    # The results module a ready batch is handed to (P-11). Named, not pinned (slim-data D-117): the app
+    # pins it. CI installs slim-data's main first; co-developing: pip install -e ../slim-data-oss
+    "slim-data",
 ]
 
 [project.optional-dependencies]
