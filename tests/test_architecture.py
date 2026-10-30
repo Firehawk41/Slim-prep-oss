@@ -92,3 +92,15 @@ def test_the_check_catches_forbidden_imports_in_domain(source):
 )
 def test_the_check_allows_stdlib_pydantic_and_its_own_layer_in_domain(source):
     assert forbidden_imports(source, "slim_prep.domain", LAYER_RULES["domain"]) == []
+
+
+def test_only_slim_datas_handoff_api_and_domain_types():
+    """slim-data D-116: slim-prep's code reaches slim-data through `service.handoff` and its domain types,
+    never its persistence or other services (tests may set up its tables)."""
+    allowed = ("slim_data.service.handoff", "slim_data.domain")
+    offenders = {}
+    for path in PACKAGE.rglob("*.py"):
+        for name in imported_modules(path.read_text(), _package_of(path)):
+            if name and name.startswith("slim_data") and not name.startswith(allowed):
+                offenders.setdefault(str(path.relative_to(PACKAGE)), []).append(name)
+    assert offenders == {}

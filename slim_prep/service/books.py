@@ -6,8 +6,7 @@ domain calculate and check, and records the result. They flush; the host commits
 
 from datetime import date, datetime, timedelta
 
-from slim_data.persistence._rows import NotFound as ResultsNotFound
-from slim_data.persistence.observations import get_batch as results_get_batch
+from slim_data.service.handoff import prepped_batch
 from sqlalchemy.orm import Session
 
 from slim_prep.domain.actor import Actor
@@ -146,11 +145,7 @@ def _code_problems(session: Session, code: str, rules: PrepRules) -> list[Proble
     problems = []
     if not rules.batch_code_fits(code):
         problems.append(Problem(where="code", message=f"prep batch codes are {rules.batch_prefix}0001, …"))
-    try:
-        results_get_batch(session, code)
-    except ResultsNotFound:
-        pass
-    else:
+    if prepped_batch(session, code) is not None:
         problems.append(
             Problem(where="code", message=f"{code} is already a batch in results: choose another")
         )

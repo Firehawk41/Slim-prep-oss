@@ -3,7 +3,8 @@
 `results_batch` turns a prep batch and its figures into slim-data's `PrepBatch`: the samples, the spike
 amounts in the analysis's unit (elements the analysis doesn't measure are left out), and each cup's
 dilution. Sample cups become CUP replicates 1, 2… and spike cups SPIKE replicates, in cup-number order.
-`send_to_results` registers it in slim-data and records which version was sent. After that, a corrected
+`send_to_results` registers it in slim-data (through its handoff API only, slim-data D-116) and records
+which version was sent. After that, a corrected
 batch goes with `send_correction` (P-20, slim-data D-96): its changed dilutions and spike amounts become
 the next versions there; the host then re-evaluates. Both sends check the samples against their TR
 again (P-23): a request cancelled since the batch was recorded stops it. The host commits.
@@ -16,8 +17,7 @@ from slim_data.domain.enums import ReadingRole
 from slim_data.domain.observations import CupDilution, SpikeAddition
 from slim_data.domain.observations import PrepBatch as ResultsBatch
 from slim_data.domain.values import AnalyteRef, Quantity, SampleRef
-from slim_data.persistence.observations import correct_prep, register_batch
-from slim_data.persistence.observations import get_batch as results_get_batch
+from slim_data.service.handoff import CodeTaken, correct_prepped_batch, prepped_batch, register_prepped_batch
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -96,8 +96,8 @@ def send_to_results(
     rules = get_rules(session, recorded.rules_id).rules
     sent = results_batch(recorded.item, figures(recorded.item, rules), analysis_id, analytes, unit)
     try:
-        registered = register_batch(session, sent, actor)
-    except ValueError:  # an instrument file registered the code first (P-26)
+        registered = register_prepped_batch(session, sent, actor)
+    except CodeTaken:  # an instrument file registered the code first (P-26)
         message = "results already has a batch with this code, from an instrument file: prep a new batch"
         raise PrepRefused([Problem(where=code, message=message)]) from None
     _record_sent(session, code, recorded.version, actor, f"send batch {code} to results")
@@ -121,7 +121,7 @@ def send_correction(
     if sent is None:
         raise PrepRefused([Problem(where=code, message="not sent to results yet")])
     recorded = books.get_batch(session, code)
-    current = results_get_batch(session, code)
+    current = prepped_batch(session, code)
     if recorded.version == sent:
         return current, 0
     _check_samples(recorded.item, lookup)
@@ -140,7 +140,7 @@ def send_correction(
     if problems:
         raise PrepRefused(problems)
     reason = recorded.reason or f"prep batch {code} corrected"
-    corrected, changed = correct_prep(session, code, actor, reason, new.dilutions, new.spikes)
+    corrected, changed = correct_prepped_batch(session, code, actor, reason, new.dilutions, new.spikes)
     _record_sent(session, code, recorded.version, actor, reason)
     return corrected, changed
 
