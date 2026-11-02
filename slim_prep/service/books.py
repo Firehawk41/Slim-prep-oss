@@ -10,11 +10,11 @@ from slim_data.service.handoff import prepped_batch
 from sqlalchemy.orm import Session
 
 from slim_prep.domain.actor import Actor
-from slim_prep.domain.ports import SampleLookup, sample_problems
+from slim_prep.domain.ports import SampleLookup, StockLookup, sample_problems
 from slim_prep.domain.prep import CupFigures, PrepBatch, figures
 from slim_prep.domain.problems import PrepRefused, Problem
 from slim_prep.domain.rules import PrepRules
-from slim_prep.domain.standards import Standard, StandardRef, make_standard
+from slim_prep.domain.standards import Standard, StandardRef, Stock, make_standard
 from slim_prep.persistence import books
 from slim_prep.persistence._rows import NotFound
 from slim_prep.persistence.books import Recorded
@@ -32,16 +32,40 @@ def record_standard(
     pipettes: tuple[str, ...] = (),
     expected_version: int = 0,
     reason: str | None = None,
+    stocks: StockLookup | None = None,
 ) -> Recorded[Standard]:
     """Makes a standard from its recipe step and source (a standard, or a stock's (name, lot)): its
-    concentration and expiry are calculated. A correction passes the version it corrects and a reason."""
+    concentration and expiry are calculated. A correction passes the version it corrects and a reason.
+
+    With `stocks` (the host's register, P-28) a stock's lot is taken from it, refused if the register
+    refuses it, and kept in the stock book as it was used (a new version when the register's copy moved,
+    e.g. an opened lot's earlier expiry), so `verify` remakes the standard from what it was made from.
+    Without, the stock book is the register, as before P-28."""
     rules = get_rules(session, rules_id).rules
     if isinstance(source, StandardRef):
         found = books.get_standard(session, source).item
+    elif stocks is not None:
+        found = _registered_stock(session, stocks, *source, prepared, actor)
     else:
         found = books.get_stock(session, *source).item
     standard = make_standard(rules, recipe, step, found, prepared, actor.display, pipettes, actor.id)
     return books.save_standard(session, standard, rules_id, actor, expected_version, reason)
+
+
+def _registered_stock(
+    session: Session, stocks: StockLookup, name: str, lot: str, on: date, actor: Actor
+) -> Stock:
+    found = stocks.stock(name, lot, on)
+    if isinstance(found, str):
+        raise PrepRefused([Problem(where="source", message=f"{name} lot {lot}: {found}")])
+    try:
+        kept = books.get_stock(session, found.name, found.lot)
+    except NotFound:
+        books.save_stock(session, found, actor)
+    else:
+        if kept.item != found:
+            books.save_stock(session, found, actor, kept.version, "as the reference-material register has it")
+    return found
 
 
 def record_batch(

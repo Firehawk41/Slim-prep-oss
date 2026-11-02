@@ -95,3 +95,74 @@ def test_a_batch_that_fails_the_rules_is_not_recorded(session, book):
         record_batch(session, batch(pour_out=None), rules_id, ANALYST, SAMPLES, NOW)
     with pytest.raises(books.NotFound):
         books.get_batch(session, "PB-0001")
+
+
+class Register:
+    """The host's StockLookup over slim-quality (P-28), in miniature."""
+
+    def __init__(self, *lots, refusals=None):
+        self.lots = {(s.name, s.lot): s for s in lots}
+        self.refusals = refusals or {}
+
+    def stock(self, name, lot, on):
+        if (name, lot) in self.refusals:
+            return self.refusals[(name, lot)]
+        return self.lots.get((name, lot), "not in the register")
+
+
+def test_a_standard_takes_its_lot_from_the_register(session):
+    """P-28: the register's lot is used and kept in the stock book as it was used."""
+    rules_id = publish_rules(session, RULES, QUALITY).id
+    lot = stock()
+    made = record_standard(
+        session, rules_id, R, "20 ppm", (lot.name, lot.lot), TODAY, ANALYST, stocks=Register(lot)
+    )
+    assert made.item.source == lot and books.get_stock(session, lot.name, lot.lot).version == 1
+    again = record_standard(
+        session,
+        rules_id,
+        R,
+        "20 ppm",
+        (lot.name, lot.lot),
+        TODAY,
+        ANALYST,
+        expected_version=1,
+        reason="x",
+        stocks=Register(lot),
+    )
+    assert (
+        again.version == 2 and books.get_stock(session, lot.name, lot.lot).version == 1
+    )  # unchanged: not re-kept
+    opened = lot.model_copy(update={"expires": TODAY + timedelta(days=30)})  # opened: an earlier expiry
+    record_standard(
+        session,
+        rules_id,
+        R,
+        "20 ppm",
+        (lot.name, lot.lot),
+        TODAY,
+        ANALYST,
+        expected_version=2,
+        reason="y",
+        stocks=Register(opened),
+    )
+    kept = books.get_stock(session, lot.name, lot.lot)
+    assert kept.version == 2 and kept.item.expires == TODAY + timedelta(days=30)
+    assert kept.reason == "as the reference-material register has it"
+
+
+def test_the_register_refuses_unknown_withdrawn_and_expired_lots(session):
+    rules_id = publish_rules(session, RULES, QUALITY).id
+    lot = stock()
+    with pytest.raises(PrepRefused, match="not in the register"):
+        record_standard(
+            session, rules_id, R, "20 ppm", (lot.name, "NOPE"), TODAY, ANALYST, stocks=Register(lot)
+        )
+    withdrawn = Register(refusals={(lot.name, lot.lot): "withdrawn on 2026-01-01"})
+    with pytest.raises(PrepRefused, match="withdrawn on 2026-01-01"):
+        record_standard(session, rules_id, R, "20 ppm", (lot.name, lot.lot), TODAY, ANALYST, stocks=withdrawn)
+    expired = lot.model_copy(update={"expires": TODAY - timedelta(days=1)})
+    with pytest.raises(PrepRefused, match="expired"):
+        record_standard(
+            session, rules_id, R, "20 ppm", (lot.name, lot.lot), TODAY, ANALYST, stocks=Register(expired)
+        )

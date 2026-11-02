@@ -18,7 +18,8 @@ Element = Field(min_length=1, max_length=20)
 
 
 class Stock(Frozen):
-    """A purchased stock solution. Typed in here until slim-quality registers them (P-14)."""
+    """A purchased stock solution: from slim-quality's register through the host (P-28), kept in the stock
+    book as each standard used it (or typed in here, before P-28)."""
 
     name: str = Name
     lot: str = Field(min_length=1, max_length=50)
