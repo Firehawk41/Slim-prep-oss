@@ -1,7 +1,10 @@
-"""What slim-prep asks the host about a sample (P-23; review B1). The TR is the host's: slim-prep never
-reads its tables. Every batch is checked against it when it is recorded, corrected and sent."""
+"""What slim-prep asks the host: about a sample (P-23; review B1) and about a purchased stock's lot (P-28).
+The TR is the host's and the reference-material register slim-quality's: slim-prep never reads their
+tables. Every batch is checked against its samples when it is recorded, corrected and sent; every standard
+made from a stock takes the lot as the register has it."""
 
 from collections.abc import Iterable
+from datetime import date
 from enum import IntEnum
 from typing import Protocol
 
@@ -9,6 +12,7 @@ from pydantic import Field
 
 from slim_prep.domain.base import Frozen
 from slim_prep.domain.problems import Problem
+from slim_prep.domain.standards import Stock
 
 
 class SampleState(IntEnum):
@@ -58,3 +62,13 @@ def sample_problems(samples: Iterable[str], analysis: str, lookup: SampleLookup)
             continue
         problems.append(Problem(where=sample_id, message=message))
     return problems
+
+
+class StockLookup(Protocol):
+    """The reference-material register, through the host (P-28; slim-quality D-127)."""
+
+    def stock(self, name: str, lot: str, on: date) -> Stock | str:
+        """The lot as a stock, its `expires` the lot's effective expiry (the earlier of the certificate's
+        and its shelf life once opened); or why it can't be used on `on` ("not in the register",
+        "withdrawn on ..."). An expired lot is returned: making the standard refuses it (P-16)."""
+        ...

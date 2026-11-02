@@ -19,7 +19,7 @@ screens. **OSS sandbox only:** demo data, never a real lab's databases (`persist
 |---|---|
 | `docs/PREP_BOOK.md` | The lab's Excel prep book and standards spreadsheet as Jamie described them. |
 | `docs/DESIGN.md` | **Signed off** 2026-10-27: P-02…P-17. |
-| `docs/DECISIONS.md` | **Authoritative.** P-01…P-27; append, never edit history. |
+| `docs/DECISIONS.md` | **Authoritative.** P-01…P-28; append, never edit history. |
 | `docs/WALKTHROUGH.md` | The guided tour: what to show and the decision behind each part. |
 
 ## Status
@@ -27,7 +27,8 @@ screens. **OSS sandbox only:** demo data, never a real lab's databases (`persist
 P0–P7 done and merged (prep book layout, design P-02…P-17, skeleton, domain, persistence, handoff to
 slim-data, host screens in slim-lims-oss, demo scenario and `verify`) and the review's B1–B10 (P-23…P-27:
 the TR port and sample picker, corrections keep code / method / analysis / rules, entered times, the batch
-code series, who with identity source). Open: the walkthrough with Jamie (on Render).
+code series, who with identity source). P-28: standards take their stock's lot from slim-quality's
+register through the host (`StockLookup`). Open: the walkthrough with Jamie (on Render).
 Working defaults (batches, quiet runs, reviews with the checklist): slim-lims-oss CLAUDE.md.
 
 ## File map
@@ -37,7 +38,8 @@ slim_prep/
 ├── domain/        # pure (stdlib + pydantic): base (Frozen, Dec), units (Concentration), rules (PrepRules:
 │                  #   methods, recipes, shelf life, lists), standards (Stock, Standard, make_standard),
 │                  #   prep (PrepBatch, Cup, Weighing, SpikeLine, figures), run_list (plan_run, run_list_csv: P-21),
-│                  #   problems (PrepRefused), actor (Role, IdentitySource), ports (SampleLookup: the TR, P-23)
+│                  #   problems (PrepRefused), actor (Role, IdentitySource), ports (SampleLookup: the TR, P-23;
+│                  #   StockLookup: the register's lots, P-28)
 ├── persistence/   # oss_guard, db (make_engine = the only create_engine), migrate, migrations/, tables,
 │                  #   types, append_only, audit; rules (publish_rules, current_rules), books (stocks,
 │                  #   standards, batches: versioned, as_of, list_*, made_from, batches_using)

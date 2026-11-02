@@ -107,3 +107,12 @@ Guards: `tests/test_review_guards.py` here, `tests/test_prep.py` in slim-lims-os
   asserted, as slim-data's D-50); a step records the analyst's initials and the host's id for them; a
   standard records initials and id the same way (it had the id only). The pour-out analyst is chosen
   from the staff list. Records made before this read as before (the new fields are optional).
+- **P-28 Stocks come from the reference-material register** (Jamie, 2026-11-02, as recommended; slim-data
+  D-127). A standard made from a purchased stock takes the lot through a `StockLookup` port the host fills
+  from slim-quality's register (as P-17 takes the rules): the lot as a `Stock`, its `expires` the lot's
+  effective expiry (the earlier of the certificate's and its shelf life once opened), or why it can't be
+  used (not registered, withdrawn); an expired lot is refused as before (P-16). The stock is kept in the
+  stock book as it was used, a new version when the register's copy moved, so `verify` remakes each
+  standard from what it was made from. Without the port the stock book is the register, as before.
+  - Rejected: the host cross-checking typed lots afterwards (two registers that can disagree); slim-prep
+    reading slim-quality (modules never import each other).
