@@ -6,8 +6,9 @@ dilution. Sample cups become CUP replicates 1, 2… and spike cups SPIKE replica
 `send_to_results` registers it in slim-data (through its handoff API only, slim-data D-116) and records
 which version was sent. After that, a corrected
 batch goes with `send_correction` (P-20, slim-data D-96): its changed dilutions and spike amounts become
-the next versions there; the host then re-evaluates. Both sends check the samples against their TR
-again (P-23): a request cancelled since the batch was recorded stops it. The host commits.
+the next versions there; the host then re-evaluates. The first send checks the samples against their TR
+again (P-23): a request cancelled since the batch was recorded stops it. A correction is not new work: the
+samples results already holds aren't asked again (P-29). The host commits.
 """
 
 from collections.abc import Collection
@@ -124,7 +125,8 @@ def send_correction(
     current = prepped_batch(session, code)
     if recorded.version == sent:
         return current, 0
-    _check_samples(recorded.item, lookup)
+    sent_samples = {str(s) for s in current.samples}
+    _check_samples(recorded.item, lookup, skip=sent_samples)  # P-29
     rules = get_rules(session, recorded.rules_id).rules
     new = results_batch(recorded.item, figures(recorded.item, rules), analysis_id, analytes, unit)
     shapes = (
@@ -150,8 +152,10 @@ def sent_version(session: Session, code: str) -> int | None:
     return session.scalar(select(func.max(sent_batches.c.version)).where(sent_batches.c.code == code))
 
 
-def _check_samples(batch: PrepBatch, lookup: SampleLookup) -> None:
-    problems = sample_problems((s.sample for s in batch.samples), batch.analysis, lookup)
+def _check_samples(batch: PrepBatch, lookup: SampleLookup, skip: Collection[str] = ()) -> None:
+    problems = sample_problems(
+        (s.sample for s in batch.samples if s.sample not in skip), batch.analysis, lookup
+    )
     if problems:
         raise PrepRefused(problems)
 

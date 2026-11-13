@@ -19,7 +19,7 @@ screens. **OSS sandbox only:** demo data, never a real lab's databases (`persist
 |---|---|
 | `docs/PREP_BOOK.md` | The lab's Excel prep book and standards spreadsheet as Jamie described them. |
 | `docs/DESIGN.md` | **Signed off** 2026-10-27: P-02…P-17. |
-| `docs/DECISIONS.md` | **Authoritative.** P-01…P-28; append, never edit history. |
+| `docs/DECISIONS.md` | **Authoritative.** P-01…P-29; append, never edit history. |
 | `docs/WALKTHROUGH.md` | The guided tour: what to show and the decision behind each part. |
 
 ## Status
@@ -28,7 +28,7 @@ P0–P7 done and merged (prep book layout, design P-02…P-17, skeleton, domain,
 slim-data, host screens in slim-lims-oss, demo scenario and `verify`) and the review's B1–B10 (P-23…P-27:
 the TR port and sample picker, corrections keep code / method / analysis / rules, entered times, the batch
 code series, who with identity source). P-28: standards take their stock's lot from slim-quality's
-register through the host (`StockLookup`). Open: the walkthrough with Jamie (on Render).
+register through the host (`StockLookup`). P-29: a correction, a move to new rules and a correction's send check only samples new to the batch. Open: the walkthrough with Jamie (on Render).
 Working defaults (batches, quiet runs, reviews with the checklist): slim-lims-oss CLAUDE.md.
 
 ## File map
