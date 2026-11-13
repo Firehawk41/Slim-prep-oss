@@ -88,9 +88,31 @@ def test_b1_a_request_cancelled_after_recording_stops_the_send(session, book):
     cups = (evaporation_cup(1, final="2.7000"), *sample.cups[1:])
     fixed = batch(samples=(sample.model_copy(update={"cups": cups}),))
     record_batch(session, fixed, None, ANALYST, SAMPLES, NOW, 1, "final misread")
+    send_correction(session, "PB-0001", RESULTS_ANA, cancelled, 7, ("Cu",), "ppb")  # P-29: not new work
+
+
+def test_p29_a_shared_batch_is_corrected_after_one_request_is_cancelled(session, book):
+    """slim-lims-oss Lab review L-2: one request cancelled (or invoiced) since doesn't stop the correction of
+    a batch it shares, its move to new rules or its sending; a sample new to the batch is still checked."""
+    two = (evaporation_sample(), evaporation_sample("TR00043-01"))
+    record_batch(session, batch(samples=two), book, ANALYST, SAMPLES, NOW)
+    send_to_results(session, "PB-0001", RESULTS_ANA, SAMPLES, 7, ("Cu",), "ppb")
+    for state in (SampleState.CANCELLED, SampleState.CLOSED):
+        gone = FakeSamples(TR00043_01=info("TR00043-01", state))
+        version = books.get_batch(session, "PB-0001").version
+        cups = (evaporation_cup(1, final=f"2.{version}000"), *two[0].cups[1:])
+        fixed = batch(samples=(two[0].model_copy(update={"cups": cups}), two[1]))
+        record_batch(session, fixed, None, ANALYST, gone, NOW, version, "final misread")
+        send_correction(session, "PB-0001", RESULTS_ANA, gone, 7, ("Cu",), "ppb")
+    third = (*two, evaporation_sample("TR00044-01"))
+    newcomer = FakeSamples(TR00044_01=info("TR00044-01", SampleState.CANCELLED))
+    version = books.get_batch(session, "PB-0001").version
     assert refused(
-        lambda: send_correction(session, "PB-0001", RESULTS_ANA, cancelled, 7, ("Cu",), "ppb")
-    ) == ["TR00042-01: its request was cancelled"]
+        lambda: record_batch(session, batch(samples=third), None, ANALYST, newcomer, NOW, version, "add one")
+    ) == ["TR00044-01: its request was cancelled"]
+    newer = publish_rules(session, RULES.model_copy(update={"entry_window_days": 30}), QUALITY).id
+    gone = FakeSamples(TR00043_01=info("TR00043-01", SampleState.CANCELLED))
+    move_to_rules(session, "PB-0001", newer, ANALYST, gone, NOW, version, "new rules")
 
 
 def test_b1_the_run_list_groups_by_the_matched_chemical(session, book):

@@ -116,3 +116,11 @@ Guards: `tests/test_review_guards.py` here, `tests/test_prep.py` in slim-lims-os
   standard from what it was made from. Without the port the stock book is the register, as before.
   - Rejected: the host cross-checking typed lots afterwards (two registers that can disagree); slim-prep
     reading slim-quality (modules never import each other).
+- **P-29 A correction is not new work** (Jamie, 2026-11-13: "move it into the module"; slim-lims-oss Lab
+  review 2026-11-12, L-2). Amends P-23. A correction (`record_batch` with `expected_version`), a move to new
+  rules and `send_correction` check against their TR only the samples the batch did not already hold; the
+  first record and the first send check every sample, as before. Without this, one request cancelled or
+  invoiced after a batch was prepped stopped the correction of a batch it shared with others, and their
+  results kept the wrong figures. A cancelled request's results still can't be released (the host's D-99).
+  - Rejected: the host answering held samples as open (`AlreadyHeld`, built first in the host): the rule
+    belongs with the module that holds the batch, and every host would have to repeat it.

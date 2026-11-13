@@ -81,7 +81,9 @@ def record_batch(
     """Checks the batch against its TR (P-23), its rules and the standards book, calculates its figures
     and records it. A new batch takes `rules_id` (the lab's current rules). A correction (`expected_version`
     > 0) keeps the batch's code, method, analysis and rules (P-24): pass None, or the batch's own rules;
-    moving to other rules is `move_to_rules`. `now` bounds the entered prep time (P-25)."""
+    moving to other rules is `move_to_rules`. A correction checks against their TR only the samples the
+    batch didn't hold before (P-29). `now` bounds the entered prep time (P-25)."""
+    held: frozenset[str] = frozenset()
     if expected_version:
         before = books.get_batch(session, batch.code)
         problems = [
@@ -99,9 +101,10 @@ def record_batch(
         if problems:
             raise PrepRefused(problems)
         rules_id = before.rules_id
+        held = _samples(before.item)
     elif rules_id is None:
         raise PrepRefused([Problem(where="rules", message="a new batch is recorded under the current rules")])
-    return _record(session, batch, rules_id, actor, lookup, now, expected_version, reason)
+    return _record(session, batch, rules_id, actor, lookup, now, expected_version, reason, held)
 
 
 def move_to_rules(
@@ -115,11 +118,17 @@ def move_to_rules(
     reason: str,
 ) -> tuple[Recorded[PrepBatch], tuple[CupFigures, ...]]:
     """The batch as it stands, rechecked and recorded under other rules: a recorded step with a reason
-    (P-24; review B9), never a side effect of a correction."""
+    (P-24; review B9), never a side effect of a correction. Its samples are already taken (P-29)."""
     before = books.get_batch(session, code)
     if before.rules_id == rules_id:
         raise PrepRefused([Problem(where="rules", message=f"batch {code} is already under rules {rules_id}")])
-    return _record(session, before.item, rules_id, actor, lookup, now, expected_version, reason)
+    return _record(
+        session, before.item, rules_id, actor, lookup, now, expected_version, reason, _samples(before.item)
+    )
+
+
+def _samples(batch: PrepBatch) -> frozenset[str]:
+    return frozenset(s.sample for s in batch.samples)
 
 
 def next_batch_code(session: Session, rules: PrepRules) -> str | None:
@@ -133,9 +142,12 @@ def next_batch_code(session: Session, rules: PrepRules) -> str | None:
     return f"{prefix}{max(numbers, default=0) + 1:04d}"
 
 
-def _record(session, batch, rules_id, actor, lookup, now, expected_version, reason):
+def _record(session, batch, rules_id, actor, lookup, now, expected_version, reason, held=frozenset()):
+    """`held`: samples the batch already held; their TR isn't asked again (P-29)."""
     rules = get_rules(session, rules_id).rules
-    problems = sample_problems((s.sample for s in batch.samples), batch.analysis, lookup)
+    problems = sample_problems(
+        (s.sample for s in batch.samples if s.sample not in held), batch.analysis, lookup
+    )
     problems += _time_problems(batch, rules, now, new=not expected_version)
     if not expected_version:
         problems += _code_problems(session, batch.code, rules)
